@@ -759,6 +759,21 @@
       gap: 12px;
     }
 
+    .average-snapshot-controls {
+      display: grid;
+      grid-template-columns: minmax(180px, 0.6fr) repeat(2, minmax(100px, 0.3fr));
+      gap: 10px;
+      align-items: end;
+      padding: 14px;
+      border: 1px solid rgba(31, 29, 26, 0.08);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.5);
+    }
+
+    .average-snapshot-controls[data-snapshot-mode="prospect"] .average-age-field {
+      display: none;
+    }
+
     .average-filter-builder {
       display: grid;
       gap: 14px;
@@ -829,6 +844,15 @@
     }
 
     .average-filter-row[data-filter-mode="range"] .average-filter-exact-wrap {
+      display: none;
+    }
+
+    .average-career-filter-row {
+      grid-template-columns: minmax(150px, 1fr) 170px minmax(110px, 1fr) minmax(110px, 1fr) auto;
+    }
+
+    .average-career-filter-row[data-career-mode="atLeast"] .average-career-max-wrap,
+    .average-career-filter-row[data-career-mode="atMost"] .average-career-min-wrap {
       display: none;
     }
 
@@ -1540,6 +1564,7 @@
         grid-template-columns: 1fr;
       }
 
+      .average-snapshot-controls,
       .average-filter-row {
         grid-template-columns: 1fr;
       }
@@ -1957,7 +1982,7 @@
             <div>
               <h2>Average Player</h2>
               <p class="results-meta" id="averageMeta">
-                Build a first-year cohort with award and stat filters, then inspect the average profile or stat-by-stat box plots.
+                Build a selected-snapshot cohort with award, snapshot, and career-outcome filters.
               </p>
             </div>
             <span class="pill"><strong id="averageMatchCountValue">0</strong> players</span>
@@ -1972,6 +1997,24 @@
                   <button class="mode-button" id="averageSecondGroupToggleButton" type="button">Second Group</button>
                 </div>
                 <span class="filter-summary" id="averageFilterSummary">No filters applied. All eligible prospects included.</span>
+              </div>
+
+              <div class="average-snapshot-controls" id="averageSnapshotControls" data-snapshot-mode="prospect">
+                <div>
+                  <label for="averageSnapshotMode">Snapshot</label>
+                  <select id="averageSnapshotMode">
+                    <option value="prospect">Prospect / first rating</option>
+                    <option value="age">Actual age range</option>
+                  </select>
+                </div>
+                <div class="average-age-field">
+                  <label for="averageSnapshotAgeMin">Min Age</label>
+                  <input id="averageSnapshotAgeMin" type="number" step="1" min="0" placeholder="Any">
+                </div>
+                <div class="average-age-field">
+                  <label for="averageSnapshotAgeMax">Max Age</label>
+                  <input id="averageSnapshotAgeMax" type="number" step="1" min="0" placeholder="Any">
+                </div>
               </div>
 
               <div class="average-summary-grid">
@@ -2028,11 +2071,22 @@
                   <div class="average-toolbar">
                     <div>
                       <h3>Numeric Filters</h3>
-                      <p class="support-copy">Add exact-value or range filters for first-year age or any numeric starting rating.</p>
+                      <p class="support-copy">Add exact-value or range filters for age or any numeric rating at the selected snapshot.</p>
                     </div>
                     <button class="filter-action-button" id="averageAddFilterButton" type="button">Add Filter</button>
                   </div>
                   <div class="average-filter-list" id="averageNumericFilters"></div>
+                </div>
+
+                <div class="average-filter-builder">
+                  <div class="average-toolbar">
+                    <div>
+                      <h3>Career Outcome Filters</h3>
+                      <p class="support-copy">Filter by later-career rating outcomes after the selected snapshot.</p>
+                    </div>
+                    <button class="filter-action-button" id="averageAddCareerFilterButton" type="button">Add Filter</button>
+                  </div>
+                  <div class="average-filter-list" id="averageCareerFilters"></div>
                 </div>
               </div>
 
@@ -2072,11 +2126,22 @@
                   <div class="average-toolbar">
                     <div>
                       <h3>Numeric Filters</h3>
-                      <p class="support-copy">Set independent Group 2 numeric filters.</p>
+                      <p class="support-copy">Set independent Group 2 snapshot numeric filters.</p>
                     </div>
                     <button class="filter-action-button" id="averageSecondAddFilterButton" type="button">Add Filter</button>
                   </div>
                   <div class="average-filter-list" id="averageSecondNumericFilters"></div>
+                </div>
+
+                <div class="average-filter-builder">
+                  <div class="average-toolbar">
+                    <div>
+                      <h3>Career Outcome Filters</h3>
+                      <p class="support-copy">Set independent Group 2 later-career rating filters.</p>
+                    </div>
+                    <button class="filter-action-button" id="averageSecondAddCareerFilterButton" type="button">Add Filter</button>
+                  </div>
+                  <div class="average-filter-list" id="averageSecondCareerFilters"></div>
                 </div>
               </div>
             </div>
@@ -2267,6 +2332,18 @@
       };
     }
 
+    function createAverageCareerFilter(id = Date.now() + Math.floor(Math.random() * 1000)) {
+      return {
+        id,
+        field: "ovr",
+        mode: "atLeast",
+        min: "",
+        max: "",
+        linkedPeerId: null,
+        linkEnabled: false,
+      };
+    }
+
     const state = {
       rows: [],
       filteredRows: [],
@@ -2315,16 +2392,23 @@
       graphAxis: "ovr",
       graphRatingKey: "",
       averagePlayerMode: "mean",
+      averageSnapshotMode: "prospect",
+      averageSnapshotAgeMin: "",
+      averageSnapshotAgeMax: "",
       averageComparisonEnabled: false,
       averagePlayerFilters: createAwardFilterState(),
       averagePositionFilter: "all",
       averagePositionLinkEnabled: false,
       averageNumericFilters: [createAverageNumericFilter(1)],
       nextAverageNumericFilterId: 2,
+      averageCareerFilters: [],
+      nextAverageCareerFilterId: 2001,
       averageSecondPlayerFilters: createAwardFilterState(),
       averageSecondPositionFilter: "all",
       averageSecondNumericFilters: [createAverageNumericFilter(1001)],
       nextAverageSecondNumericFilterId: 1002,
+      averageSecondCareerFilters: [],
+      nextAverageSecondCareerFilterId: 3001,
       indexedCount: 0,
       hasLoadedFile: false,
       loading: false,
@@ -2396,6 +2480,10 @@
       averageFilterSummary: document.getElementById("averageFilterSummary"),
       averageModeMeanButton: document.getElementById("averageModeMeanButton"),
       averageModeBoxButton: document.getElementById("averageModeBoxButton"),
+      averageSnapshotControls: document.getElementById("averageSnapshotControls"),
+      averageSnapshotMode: document.getElementById("averageSnapshotMode"),
+      averageSnapshotAgeMin: document.getElementById("averageSnapshotAgeMin"),
+      averageSnapshotAgeMax: document.getElementById("averageSnapshotAgeMax"),
       averageSecondGroupToggleButton: document.getElementById("averageSecondGroupToggleButton"),
       averageSecondGroup: document.getElementById("averageSecondGroup"),
       averageAwardsModeAnd: document.getElementById("averageAwardsModeAnd"),
@@ -2408,6 +2496,8 @@
       averagePositionLinkToggle: document.getElementById("averagePositionLinkToggle"),
       averageAddFilterButton: document.getElementById("averageAddFilterButton"),
       averageNumericFilters: document.getElementById("averageNumericFilters"),
+      averageAddCareerFilterButton: document.getElementById("averageAddCareerFilterButton"),
+      averageCareerFilters: document.getElementById("averageCareerFilters"),
       averageSecondAwardsModeAnd: document.getElementById("averageSecondAwardsModeAnd"),
       averageSecondAwardsModeOr: document.getElementById("averageSecondAwardsModeOr"),
       averageSecondFilterAllStar: document.getElementById("averageSecondFilterAllStar"),
@@ -2418,6 +2508,8 @@
       averageSecondPositionLinkToggle: document.getElementById("averageSecondPositionLinkToggle"),
       averageSecondAddFilterButton: document.getElementById("averageSecondAddFilterButton"),
       averageSecondNumericFilters: document.getElementById("averageSecondNumericFilters"),
+      averageSecondAddCareerFilterButton: document.getElementById("averageSecondAddCareerFilterButton"),
+      averageSecondCareerFilters: document.getElementById("averageSecondCareerFilters"),
       averageSurface: document.getElementById("averageSurface"),
       tabButtons: [...document.querySelectorAll("[data-tab-target]")],
       tabPanels: [...document.querySelectorAll("[data-tab-panel]")],
@@ -2541,6 +2633,18 @@
       state.averagePlayerMode = "box";
       render();
     });
+    elements.averageSnapshotMode.addEventListener("change", () => {
+      state.averageSnapshotMode = elements.averageSnapshotMode.value;
+      render();
+    });
+    elements.averageSnapshotAgeMin.addEventListener("input", () => {
+      state.averageSnapshotAgeMin = elements.averageSnapshotAgeMin.value;
+      render();
+    });
+    elements.averageSnapshotAgeMax.addEventListener("input", () => {
+      state.averageSnapshotAgeMax = elements.averageSnapshotAgeMax.value;
+      render();
+    });
     elements.averageSecondGroupToggleButton.addEventListener("click", () => {
       state.averageComparisonEnabled = !state.averageComparisonEnabled;
       render();
@@ -2621,6 +2725,16 @@
       state.nextAverageSecondNumericFilterId += 1;
       render();
     });
+    elements.averageAddCareerFilterButton.addEventListener("click", () => {
+      state.averageCareerFilters.push(createAverageCareerFilter(state.nextAverageCareerFilterId));
+      state.nextAverageCareerFilterId += 1;
+      render();
+    });
+    elements.averageSecondAddCareerFilterButton.addEventListener("click", () => {
+      state.averageSecondCareerFilters.push(createAverageCareerFilter(state.nextAverageSecondCareerFilterId));
+      state.nextAverageSecondCareerFilterId += 1;
+      render();
+    });
     elements.averageNumericFilters.addEventListener("change", (event) => {
       if (applyAverageNumericFilterLinkToggle(event, "averageNumericFilters")) {
         render();
@@ -2639,6 +2753,24 @@
         render();
       }
     });
+    elements.averageCareerFilters.addEventListener("change", (event) => {
+      if (applyAverageCareerFilterLinkToggle(event, "averageCareerFilters")) {
+        render();
+        return;
+      }
+      if (applyAverageCareerFilterChange(event, "averageCareerFilters")) {
+        render();
+      }
+    });
+    elements.averageSecondCareerFilters.addEventListener("change", (event) => {
+      if (applyAverageCareerFilterLinkToggle(event, "averageSecondCareerFilters")) {
+        render();
+        return;
+      }
+      if (applyAverageCareerFilterChange(event, "averageSecondCareerFilters")) {
+        render();
+      }
+    });
     elements.averageNumericFilters.addEventListener("click", (event) => {
       if (applyAverageNumericFilterRemove(event, "averageNumericFilters", "nextAverageNumericFilterId")) {
         render();
@@ -2646,6 +2778,25 @@
       }
       if (applyAverageNumericFilterCopy(event, "averageNumericFilters", "averageSecondNumericFilters", "nextAverageSecondNumericFilterId")) {
         state.averageComparisonEnabled = true;
+        render();
+      }
+    });
+    elements.averageCareerFilters.addEventListener("click", (event) => {
+      if (applyAverageCareerFilterRemove(event, "averageCareerFilters", "nextAverageCareerFilterId")) {
+        render();
+        return;
+      }
+      if (applyAverageCareerFilterCopy(event, "averageCareerFilters", "averageSecondCareerFilters", "nextAverageSecondCareerFilterId")) {
+        state.averageComparisonEnabled = true;
+        render();
+      }
+    });
+    elements.averageSecondCareerFilters.addEventListener("click", (event) => {
+      if (applyAverageCareerFilterRemove(event, "averageSecondCareerFilters", "nextAverageSecondCareerFilterId")) {
+        render();
+        return;
+      }
+      if (applyAverageCareerFilterCopy(event, "averageSecondCareerFilters", "averageCareerFilters", "nextAverageCareerFilterId")) {
         render();
       }
     });
@@ -3326,12 +3477,18 @@
         awards: state.averagePlayerFilters,
         positionFilter: state.averagePositionFilter,
         numericFilters: state.averageNumericFilters,
+        careerFilters: state.averageCareerFilters,
       };
       const secondaryConfig = {
         awards: state.averageSecondPlayerFilters,
         positionFilter: state.averageSecondPositionFilter,
         numericFilters: state.averageSecondNumericFilters,
+        careerFilters: state.averageSecondCareerFilters,
       };
+      elements.averageSnapshotControls.dataset.snapshotMode = state.averageSnapshotMode;
+      elements.averageSnapshotMode.value = state.averageSnapshotMode;
+      elements.averageSnapshotAgeMin.value = state.averageSnapshotAgeMin;
+      elements.averageSnapshotAgeMax.value = state.averageSnapshotAgeMax;
       renderSelectOptions(
         elements.averagePositionFilter,
         AVERAGE_POSITION_FILTER_OPTIONS.map((option) => option.value),
@@ -3364,6 +3521,8 @@
       syncAwardFilterButton(elements.averageSecondFilterMvp, state.averageSecondPlayerFilters.mvp, FILTER_LABELS.mvp);
       renderAverageNumericFilters(elements.averageNumericFilters, state.averageNumericFilters);
       renderAverageNumericFilters(elements.averageSecondNumericFilters, state.averageSecondNumericFilters);
+      renderAverageCareerFilters(elements.averageCareerFilters, state.averageCareerFilters);
+      renderAverageCareerFilters(elements.averageSecondCareerFilters, state.averageSecondCareerFilters);
 
       const primaryRows = getAveragePlayerRowsForConfig(primaryConfig);
       const secondaryRows = state.averageComparisonEnabled
@@ -3396,7 +3555,7 @@
           <div class="empty-state">
             <div>
               <h3>No export loaded.</h3>
-              <p class="empty-copy">Import a BBGM league file first, then use awards and numeric filters to define the cohort.</p>
+              <p class="empty-copy">Import a BBGM league file first, then use snapshot, award, numeric, and career-outcome filters to define the cohort.</p>
             </div>
           </div>
         `;
@@ -3409,7 +3568,7 @@
           <div class="empty-state">
             <div>
               <h3>No matching players.</h3>
-              <p class="empty-copy">${state.averageComparisonEnabled ? "At least one group has zero matches. Relax awards, position, or numeric filters." : "Relax the awards logic or widen the numeric filter ranges."}</p>
+              <p class="empty-copy">${state.averageComparisonEnabled ? "At least one group has zero matches. Relax snapshot, award, position, numeric, or career-outcome filters." : "Relax the snapshot, award, numeric, or career-outcome filters."}</p>
             </div>
           </div>
         `;
@@ -3417,8 +3576,8 @@
       }
 
       elements.averageMeta.textContent = state.averagePlayerMode === "mean"
-        ? `Mean first-year profile for ${state.averageComparisonEnabled ? "both selected groups" : `${formatNumber(primaryRows.length)} matching prospects`}.`
-        : `Distribution of first-year stats for ${state.averageComparisonEnabled ? "both selected groups" : `${formatNumber(primaryRows.length)} matching prospects`}.`;
+        ? `Mean selected-snapshot profile for ${state.averageComparisonEnabled ? "both selected groups" : `${formatNumber(primaryRows.length)} matching players`}.`
+        : `Distribution of selected-snapshot stats for ${state.averageComparisonEnabled ? "both selected groups" : `${formatNumber(primaryRows.length)} matching players`}.`;
 
       elements.averageSurface.innerHTML = state.averagePlayerMode === "mean"
         ? createAverageMeanMarkup(
@@ -3486,16 +3645,128 @@
       `).join("");
     }
 
+    function renderAverageCareerFilters(containerElement, filters) {
+      containerElement.innerHTML = filters.map((filter) => `
+        <div class="average-filter-row average-career-filter-row" data-average-career-filter-id="${filter.id}" data-career-mode="${escapeHtml(filter.mode)}">
+          <div>
+            <label>Field</label>
+            <select data-average-career-filter-field>
+              ${RATING_OPTIONS.map((field) => `
+                <option value="${escapeHtml(field)}"${field === filter.field ? " selected" : ""}>${escapeHtml(formatKey(field))}</option>
+              `).join("")}
+            </select>
+          </div>
+          <div>
+            <label>Outcome</label>
+            <select data-average-career-filter-mode>
+              <option value="atLeast"${filter.mode === "atLeast" ? " selected" : ""}>Reached At Least</option>
+              <option value="atMost"${filter.mode === "atMost" ? " selected" : ""}>At Most / Exclude Above</option>
+              <option value="range"${filter.mode === "range" ? " selected" : ""}>Range</option>
+            </select>
+          </div>
+          <div class="average-career-min-wrap">
+            <label>${filter.mode === "range" ? "Min" : "Value"}</label>
+            <input type="number" step="any" data-average-career-filter-min value="${escapeHtml(filter.min)}" placeholder="Min">
+          </div>
+          <div class="average-career-max-wrap">
+            <label>${filter.mode === "range" ? "Max" : "Value"}</label>
+            <input type="number" step="any" data-average-career-filter-max value="${escapeHtml(filter.max)}" placeholder="Max">
+          </div>
+          <div class="average-filter-actions">
+            <button class="average-filter-remove" type="button" data-average-career-filter-remove>Remove</button>
+            <button class="average-filter-copy" type="button" data-average-career-filter-copy>Copy</button>
+            ${filter.linkedPeerId !== null ? `
+              <label class="average-filter-link">
+                <input type="checkbox" data-average-career-filter-link-toggle ${filter.linkEnabled ? "checked" : ""}>
+                Link
+              </label>
+            ` : ""}
+          </div>
+        </div>
+      `).join("");
+    }
+
     function getAveragePlayerRowsForConfig(config) {
-      return state.rows.filter((row) => {
+      return state.rows.map((row) => buildAverageSnapshotRow(row)).filter((row) => {
+        if (!row) {
+          return false;
+        }
         if (!doesRowMatchTrendFilters(row, config.awards)) {
           return false;
         }
         if (!doesRowMatchAveragePositionFilter(row, config.positionFilter)) {
           return false;
         }
+        if (!config.careerFilters.every((filter) => doesRowMatchAverageCareerFilter(row, filter))) {
+          return false;
+        }
         return config.numericFilters.every((filter) => doesRowMatchAverageNumericFilter(row, filter));
       });
+    }
+
+    function buildAverageSnapshotRow(row) {
+      const snapshot = getAverageSnapshot(row);
+      if (!snapshot) {
+        return null;
+      }
+      return {
+        ...row,
+        firstYear: snapshot.season,
+        firstAge: snapshot.age,
+        rating: snapshot.rating,
+        averageSnapshotSeason: snapshot.season,
+        averageSnapshotAge: snapshot.age,
+      };
+    }
+
+    function getAverageSnapshot(row) {
+      if (state.averageSnapshotMode !== "age") {
+        if (!row.rating) {
+          return null;
+        }
+        return {
+          rating: row.rating,
+          season: row.firstYear,
+          age: row.firstAge,
+        };
+      }
+
+      const minAge = state.averageSnapshotAgeMin === "" ? Number.NEGATIVE_INFINITY : Number(state.averageSnapshotAgeMin);
+      const maxAge = state.averageSnapshotAgeMax === "" ? Number.POSITIVE_INFINITY : Number(state.averageSnapshotAgeMax);
+      if (!Number.isFinite(minAge) && minAge !== Number.NEGATIVE_INFINITY) {
+        return null;
+      }
+      if (!Number.isFinite(maxAge) && maxAge !== Number.POSITIVE_INFINITY) {
+        return null;
+      }
+
+      const candidates = (row.ratingHistory || []).filter((entry) => (
+        typeof entry.age === "number"
+        && Number.isFinite(entry.age)
+        && entry.age >= minAge
+        && entry.age <= maxAge
+      ));
+      if (!candidates.length) {
+        return null;
+      }
+
+      const best = candidates.reduce((currentBest, entry) => {
+        const bestOvr = typeof currentBest.rating?.ovr === "number" ? currentBest.rating.ovr : Number.NEGATIVE_INFINITY;
+        const entryOvr = typeof entry.rating?.ovr === "number" ? entry.rating.ovr : Number.NEGATIVE_INFINITY;
+        if (entryOvr !== bestOvr) {
+          return entryOvr > bestOvr ? entry : currentBest;
+        }
+        const bestAge = typeof currentBest.age === "number" ? currentBest.age : Number.POSITIVE_INFINITY;
+        const entryAge = typeof entry.age === "number" ? entry.age : Number.POSITIVE_INFINITY;
+        if (entryAge !== bestAge) {
+          return entryAge < bestAge ? entry : currentBest;
+        }
+        const bestSeason = typeof currentBest.season === "number" ? currentBest.season : Number.POSITIVE_INFINITY;
+        const entrySeason = typeof entry.season === "number" ? entry.season : Number.POSITIVE_INFINITY;
+        return entrySeason < bestSeason ? entry : currentBest;
+      }, candidates[0]);
+
+      return best;
     }
 
     function doesRowMatchAveragePositionFilter(row, selectedFilterValue) {
@@ -3537,6 +3808,46 @@
       const minValue = filter.min === "" ? Number.NEGATIVE_INFINITY : Number(filter.min);
       const maxValue = filter.max === "" ? Number.POSITIVE_INFINITY : Number(filter.max);
       return value >= minValue && value <= maxValue;
+    }
+
+    function doesRowMatchAverageCareerFilter(row, filter) {
+      if (typeof row.averageSnapshotSeason !== "number") {
+        return false;
+      }
+      const values = (row.ratingHistory || [])
+        .filter((entry) => typeof entry.season === "number" && entry.season > row.averageSnapshotSeason)
+        .map((entry) => entry.rating?.[filter.field])
+        .filter((value) => typeof value === "number" && Number.isFinite(value));
+      if (!values.length) {
+        return false;
+      }
+
+      const peakValue = Math.max(...values);
+      if (filter.mode === "atMost") {
+        if (filter.max === "") {
+          return true;
+        }
+        const maxValue = Number(filter.max);
+        return Number.isFinite(maxValue) ? peakValue <= maxValue : true;
+      }
+
+      if (filter.mode === "range") {
+        const minValue = filter.min === "" ? Number.NEGATIVE_INFINITY : Number(filter.min);
+        const maxValue = filter.max === "" ? Number.POSITIVE_INFINITY : Number(filter.max);
+        if (!Number.isFinite(minValue) && minValue !== Number.NEGATIVE_INFINITY) {
+          return true;
+        }
+        if (!Number.isFinite(maxValue) && maxValue !== Number.POSITIVE_INFINITY) {
+          return true;
+        }
+        return peakValue >= minValue && peakValue <= maxValue;
+      }
+
+      if (filter.min === "") {
+        return true;
+      }
+      const minValue = Number(filter.min);
+      return Number.isFinite(minValue) ? peakValue >= minValue : true;
     }
 
     function getAverageFieldValue(row, field) {
@@ -3581,15 +3892,18 @@
       const numericLabels = config.numericFilters
         .map((filter) => formatAverageNumericFilterLabel(filter))
         .filter(Boolean);
+      const careerLabels = config.careerFilters
+        .map((filter) => formatAverageCareerFilterLabel(filter))
+        .filter(Boolean);
 
       const positionLabel = config.positionFilter === "all"
         ? ""
         : `Position: ${getAveragePositionFilterLabel(config.positionFilter)}`;
 
-      if (!awardLabels.length && !numericLabels.length && !positionLabel) {
+      if (!awardLabels.length && !numericLabels.length && !careerLabels.length && !positionLabel) {
         return "No filters applied. All eligible prospects included.";
       }
-      return [...awardLabels, ...(positionLabel ? [positionLabel] : []), ...numericLabels].join(" | ");
+      return [...awardLabels, ...(positionLabel ? [positionLabel] : []), ...numericLabels, ...careerLabels].join(" | ");
     }
 
     function createAverageMeanMarkup(primarySummaryStats, primaryRowCount, secondarySummaryStats, secondaryRowCount, compareEnabled) {
@@ -4072,6 +4386,159 @@
       return listKey === "averageNumericFilters" ? "nextAverageNumericFilterId" : "nextAverageSecondNumericFilterId";
     }
 
+    function applyAverageCareerFilterChange(event, listKey) {
+      const filterList = state[listKey];
+      const row = event.target.closest("[data-average-career-filter-id]");
+      if (!row) {
+        return false;
+      }
+      const filterId = Number(row.dataset.averageCareerFilterId);
+      const filter = filterList.find((entry) => entry.id === filterId);
+      if (!filter) {
+        return false;
+      }
+      if (event.target.matches("[data-average-career-filter-field]")) {
+        filter.field = event.target.value;
+      }
+      if (event.target.matches("[data-average-career-filter-mode]")) {
+        filter.mode = event.target.value;
+      }
+      if (event.target.matches("[data-average-career-filter-min]")) {
+        filter.min = event.target.value;
+      }
+      if (event.target.matches("[data-average-career-filter-max]")) {
+        filter.max = event.target.value;
+      }
+      syncLinkedAverageCareerFilter(filter, listKey);
+      return true;
+    }
+
+    function applyAverageCareerFilterRemove(event, listKey, nextIdKey) {
+      const removeButton = event.target.closest("[data-average-career-filter-remove]");
+      if (!removeButton) {
+        return false;
+      }
+      const row = removeButton.closest("[data-average-career-filter-id]");
+      if (!row) {
+        return false;
+      }
+      const filterId = Number(row.dataset.averageCareerFilterId);
+      const filter = state[listKey].find((entry) => entry.id === filterId);
+      const shouldCascadeDelete = Boolean(filter?.linkEnabled && filter?.linkedPeerId !== null);
+      const peerListKey = getOtherAverageCareerFilterListKey(listKey);
+      const peerFilterId = filter?.linkedPeerId ?? null;
+
+      state[listKey] = state[listKey].filter((entry) => entry.id !== filterId);
+
+      if (shouldCascadeDelete && peerFilterId !== null) {
+        state[peerListKey] = state[peerListKey].filter((entry) => entry.id !== peerFilterId);
+      } else if (peerFilterId !== null) {
+        const peerFilter = state[peerListKey].find((entry) => entry.id === peerFilterId);
+        if (peerFilter) {
+          peerFilter.linkedPeerId = null;
+          peerFilter.linkEnabled = false;
+        }
+      }
+
+      return true;
+    }
+
+    function applyAverageCareerFilterCopy(event, sourceListKey, targetListKey, targetNextIdKey) {
+      const copyButton = event.target.closest("[data-average-career-filter-copy]");
+      if (!copyButton) {
+        return false;
+      }
+      const row = copyButton.closest("[data-average-career-filter-id]");
+      if (!row) {
+        return false;
+      }
+      const filterId = Number(row.dataset.averageCareerFilterId);
+      const sourceFilter = state[sourceListKey].find((entry) => entry.id === filterId);
+      if (!sourceFilter) {
+        return false;
+      }
+
+      if (sourceFilter.linkedPeerId !== null) {
+        const existingPeer = state[targetListKey].find((entry) => entry.id === sourceFilter.linkedPeerId);
+        if (existingPeer) {
+          sourceFilter.linkEnabled = true;
+          existingPeer.linkEnabled = true;
+          syncLinkedAverageCareerFilter(sourceFilter, sourceListKey);
+          return true;
+        }
+      }
+
+      const nextId = state[targetNextIdKey];
+      const copiedFilter = {
+        ...sourceFilter,
+        id: nextId,
+        linkedPeerId: sourceFilter.id,
+        linkEnabled: true,
+      };
+      sourceFilter.linkedPeerId = nextId;
+      sourceFilter.linkEnabled = true;
+      state[targetListKey].push(copiedFilter);
+      state[targetNextIdKey] += 1;
+      syncLinkedAverageCareerFilter(sourceFilter, sourceListKey);
+      return true;
+    }
+
+    function applyAverageCareerFilterLinkToggle(event, listKey) {
+      const toggle = event.target.closest("[data-average-career-filter-link-toggle]");
+      if (!toggle) {
+        return false;
+      }
+      const row = toggle.closest("[data-average-career-filter-id]");
+      if (!row) {
+        return false;
+      }
+      const filterId = Number(row.dataset.averageCareerFilterId);
+      const filter = state[listKey].find((entry) => entry.id === filterId);
+      if (!filter || filter.linkedPeerId === null) {
+        return false;
+      }
+
+      const peerListKey = getOtherAverageCareerFilterListKey(listKey);
+      const peerFilter = state[peerListKey].find((entry) => entry.id === filter.linkedPeerId);
+      if (!peerFilter) {
+        filter.linkedPeerId = null;
+        filter.linkEnabled = false;
+        return true;
+      }
+
+      const nextValue = Boolean(toggle.checked);
+      filter.linkEnabled = nextValue;
+      peerFilter.linkEnabled = nextValue;
+      if (nextValue) {
+        syncLinkedAverageCareerFilter(filter, listKey);
+      }
+      return true;
+    }
+
+    function syncLinkedAverageCareerFilter(sourceFilter, sourceListKey) {
+      if (!sourceFilter.linkEnabled || sourceFilter.linkedPeerId === null) {
+        return;
+      }
+      const targetListKey = getOtherAverageCareerFilterListKey(sourceListKey);
+      const targetFilter = state[targetListKey].find((entry) => entry.id === sourceFilter.linkedPeerId);
+      if (!targetFilter) {
+        sourceFilter.linkedPeerId = null;
+        sourceFilter.linkEnabled = false;
+        return;
+      }
+
+      targetFilter.field = sourceFilter.field;
+      targetFilter.mode = sourceFilter.mode;
+      targetFilter.min = sourceFilter.min;
+      targetFilter.max = sourceFilter.max;
+      targetFilter.linkedPeerId = sourceFilter.id;
+      targetFilter.linkEnabled = true;
+    }
+
+    function getOtherAverageCareerFilterListKey(listKey) {
+      return listKey === "averageCareerFilters" ? "averageSecondCareerFilters" : "averageCareerFilters";
+    }
+
     function buildAverageFilterConstraintMap(numericFilters) {
       const constraints = new Map();
       for (const filter of numericFilters) {
@@ -4138,6 +4605,20 @@
       return "";
     }
 
+    function formatAverageCareerFilterLabel(filter) {
+      const fieldLabel = formatKey(filter.field);
+      if (filter.mode === "atMost" && filter.max !== "") {
+        return `Later ${fieldLabel} at most ${filter.max}`;
+      }
+      if (filter.mode === "range" && (filter.min !== "" || filter.max !== "")) {
+        return `Later ${fieldLabel} peak ${filter.min === "" ? "-inf" : filter.min} to ${filter.max === "" ? "+inf" : filter.max}`;
+      }
+      if (filter.min !== "") {
+        return `Later ${fieldLabel} reached at least ${filter.min}`;
+      }
+      return "";
+    }
+
     function buildAverageBoxGraphTitle(primaryConfig, secondaryConfig, compareEnabled) {
       if (!compareEnabled) {
         return "";
@@ -4150,6 +4631,14 @@
       for (const filter of [...primaryConfig.numericFilters, ...secondaryConfig.numericFilters]) {
         if (filter.linkEnabled && filter.linkedPeerId !== null) {
           const label = formatAverageNumericFilterLabel(filter);
+          if (label) {
+            linkedLabels.push(label);
+          }
+        }
+      }
+      for (const filter of [...primaryConfig.careerFilters, ...secondaryConfig.careerFilters]) {
+        if (filter.linkEnabled && filter.linkedPeerId !== null) {
+          const label = formatAverageCareerFilterLabel(filter);
           if (label) {
             linkedLabels.push(label);
           }
@@ -4193,6 +4682,12 @@
         .map((filter) => formatAverageNumericFilterLabel(filter))
         .filter(Boolean);
       labels.push(...numericLabels);
+
+      const careerLabels = config.careerFilters
+        .filter((filter) => !(filter.linkEnabled && filter.linkedPeerId !== null))
+        .map((filter) => formatAverageCareerFilterLabel(filter))
+        .filter(Boolean);
+      labels.push(...careerLabels);
 
       return labels;
     }
@@ -5435,6 +5930,7 @@
 
         function buildRow(player, fallbackIndex) {
           const rating = Array.isArray(player.ratings) && player.ratings.length ? player.ratings[0] : null;
+          const ratings = Array.isArray(player.ratings) ? player.ratings : [];
           const awards = Array.isArray(player.awards) ? player.awards : [];
           const firstName = typeof player.firstName === "string" ? player.firstName : "";
           const lastName = typeof player.lastName === "string" ? player.lastName : "";
@@ -5442,6 +5938,16 @@
           const pid = typeof player.pid === "number" ? player.pid : fallbackIndex;
           const bornYear = typeof player.born?.year === "number" ? player.born.year : null;
           const firstYear = rating && typeof rating.season === "number" ? rating.season : null;
+          const ratingHistory = ratings
+            .filter((entry) => entry && typeof entry === "object")
+            .map((entry) => {
+              const season = typeof entry.season === "number" ? entry.season : null;
+              return {
+                season,
+                age: season !== null && bornYear !== null ? season - bornYear : null,
+                rating: buildRatingSnapshot(entry),
+              };
+            });
           const accolades = {
             allStar: awards.some((award) => award?.type === "All-Star"),
             allLeague: awards.some((award) => /All-League/.test(award?.type || "")),
@@ -5456,6 +5962,7 @@
             firstAge: firstYear !== null && bornYear !== null ? firstYear - bornYear : null,
             accolades,
             rating,
+            ratingHistory,
             searchText: [
               name,
               firstYear,
@@ -5464,6 +5971,20 @@
               rating?.pot
             ].filter((value) => value !== undefined && value !== null).join(" ").toLowerCase(),
           };
+        }
+
+        function buildRatingSnapshot(rating) {
+          const snapshot = {};
+          for (const [key, value] of Object.entries(rating || {})) {
+            if (
+              typeof value === "number"
+              || typeof value === "string"
+              || (Array.isArray(value) && value.every((entry) => typeof entry === "string"))
+            ) {
+              snapshot[key] = value;
+            }
+          }
+          return snapshot;
         }
 
         function postProgress(total, loaded, count, lastProgress) {
