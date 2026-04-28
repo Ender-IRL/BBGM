@@ -964,6 +964,160 @@
       overflow: hidden;
     }
 
+    .stat-circle-layout {
+      display: grid;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .stat-circle-controls {
+      display: grid;
+      gap: 16px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .stat-circle-control-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      align-items: end;
+    }
+
+    .stat-circle-ovr-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .stat-circle-control-grid[data-ovr-mode="exact"] .stat-circle-ovr-range,
+    .stat-circle-control-grid[data-ovr-mode="range"] .stat-circle-ovr-exact {
+      display: none;
+    }
+
+    .stat-circle-awards {
+      display: grid;
+      gap: 10px;
+      padding: 14px;
+      border: 1px solid rgba(31, 29, 26, 0.08);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.5);
+    }
+
+    .stat-circle-paste {
+      min-height: 220px;
+      resize: vertical;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      line-height: 1.5;
+    }
+
+    .stat-circle-parse-note {
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+
+    .stat-circle-surface {
+      display: grid;
+      gap: 16px;
+    }
+
+    .stat-circle-graph-wrap {
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.72);
+      overflow: auto;
+    }
+
+    .stat-circle-graph {
+      display: block;
+      min-width: 860px;
+      width: 100%;
+      height: auto;
+    }
+
+    .stat-circle-node rect {
+      fill: rgba(255, 255, 255, 0.96);
+      stroke: rgba(31, 29, 26, 0.14);
+      stroke-width: 1.2;
+      rx: 14;
+    }
+
+    .stat-circle-node text {
+      fill: var(--ink);
+      font-size: 13px;
+      font-weight: 800;
+      text-anchor: middle;
+      dominant-baseline: middle;
+    }
+
+    .stat-circle-node .stat-circle-node-value {
+      fill: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .stat-circle-line {
+      stroke-linecap: round;
+      transition: stroke-width 160ms ease, opacity 160ms ease;
+    }
+
+    .stat-circle-line:hover {
+      opacity: 0.95;
+    }
+
+    .stat-circle-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .stat-circle-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .stat-circle-legend i {
+      display: inline-block;
+      width: 18px;
+      height: 4px;
+      border-radius: 999px;
+    }
+
+    .age-graph-layout {
+      display: grid;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .age-graph-controls {
+      display: grid;
+      gap: 16px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .age-graph-control-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      align-items: end;
+    }
+
+    .age-graph-thresholds {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .age-graph-surface {
+      display: grid;
+      gap: 16px;
+    }
+
     .settings-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1560,7 +1714,8 @@
       .comparison-grid,
       .comparison-field-grid,
       .settings-grid,
-      .average-summary-grid {
+      .average-summary-grid,
+      .stat-circle-control-grid {
         grid-template-columns: 1fr;
       }
 
@@ -1684,6 +1839,12 @@
       </button>
       <button class="tab-button" id="tabAverage" data-tab-target="average" role="tab" aria-selected="false">
         Average Player
+      </button>
+      <button class="tab-button" id="tabStatCircle" data-tab-target="statCircle" role="tab" aria-selected="false">
+        Stat Circle
+      </button>
+      <button class="tab-button" id="tabAgeGraphing" data-tab-target="ageGraphing" role="tab" aria-selected="false">
+        Age Graphing
       </button>
       <button class="tab-button" id="tabSettings" data-tab-target="settings" role="tab" aria-selected="false">
         Settings
@@ -2159,6 +2320,169 @@
       </div>
     </section>
 
+    <section class="tab-panel" data-tab-panel="statCircle" hidden>
+      <div class="panel fade-up delay-1">
+        <div class="panel-inner">
+          <div class="results-head">
+            <div>
+              <h2>Stat Circle</h2>
+              <p class="results-meta" id="statCircleMeta">
+                Paste a player rating profile, then see which two-stat thresholds historically led to later awards.
+              </p>
+            </div>
+            <span class="pill"><strong id="statCircleMatchCountValue">0</strong> base players</span>
+          </div>
+
+          <div class="stat-circle-layout">
+            <div class="stat-circle-controls">
+              <div class="stat-circle-control-grid" id="statCircleControlGrid" data-ovr-mode="range">
+                <div>
+                  <label for="statCircleSnapshotMode">Snapshot</label>
+                  <select id="statCircleSnapshotMode">
+                    <option value="prospect">Draft Prospect</option>
+                    <option value="player">Player</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="statCircleAge">Exact Age</label>
+                  <input id="statCircleAge" type="number" step="1" min="0" placeholder="Any prospect age">
+                </div>
+                <div>
+                  <label for="statCircleOvrMode">OVR Filter</label>
+                  <select id="statCircleOvrMode">
+                    <option value="range">Range</option>
+                    <option value="exact">Exact</option>
+                  </select>
+                </div>
+                <div class="stat-circle-ovr-exact">
+                  <label for="statCircleOvrExact">OVR</label>
+                  <input id="statCircleOvrExact" type="number" step="1" min="0" placeholder="Any">
+                </div>
+                <div class="stat-circle-ovr-range">
+                  <label>OVR Range</label>
+                  <div class="stat-circle-ovr-grid">
+                    <input id="statCircleOvrMin" type="number" step="1" min="0" placeholder="Min">
+                    <input id="statCircleOvrMax" type="number" step="1" min="0" placeholder="Max">
+                  </div>
+                </div>
+                <div>
+                  <label for="statCirclePositionFilter">Position</label>
+                  <select id="statCirclePositionFilter"></select>
+                </div>
+                <div>
+                  <label for="statCircleStatRange">Stat Match Range</label>
+                  <input id="statCircleStatRange" type="number" step="1" min="0" value="2" placeholder="2">
+                </div>
+                <div>
+                  <label for="statCircleRangeDirection">Range Direction</label>
+                  <select id="statCircleRangeDirection">
+                    <option value="both">Higher and lower</option>
+                    <option value="higher">Higher only</option>
+                    <option value="lower">Lower only</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="stat-circle-awards">
+                <div class="comparison-filter-meta">
+                  <span class="filter-mode-label">Success Awards</span>
+                  <div class="comparison-filter-mode">
+                    <button class="mode-button is-active" id="statCircleAwardsModeAnd" type="button">AND</button>
+                    <button class="mode-button" id="statCircleAwardsModeOr" type="button">OR</button>
+                  </div>
+                </div>
+                <div class="comparison-filter-row">
+                  <button class="comparison-filter-pill" id="statCircleAwardAllStar" type="button"><span>All-Star</span><span class="filter-state-badge" data-filter-state-label>Ignore</span></button>
+                  <button class="comparison-filter-pill" id="statCircleAwardAllLeague" type="button"><span>All-League</span><span class="filter-state-badge" data-filter-state-label>Ignore</span></button>
+                  <button class="comparison-filter-pill" id="statCircleAwardAllDefensive" type="button"><span>All-Defensive</span><span class="filter-state-badge" data-filter-state-label>Ignore</span></button>
+                  <button class="comparison-filter-pill" id="statCircleAwardMvp" type="button"><span>MVP</span><span class="filter-state-badge" data-filter-state-label>Ignore</span></button>
+                </div>
+              </div>
+
+              <div>
+                <label for="statCirclePasteInput">Paste player ratings</label>
+                <textarea id="statCirclePasteInput" class="stat-circle-paste" placeholder="Physical&#10;Height:&#9;25&#10;Strength:&#9;56&#10;Speed:&#9;83&#10;..."></textarea>
+                <p class="stat-circle-parse-note" id="statCircleParseNote">Paste BBGM-style rating labels to build the circle.</p>
+              </div>
+            </div>
+
+            <div class="stat-circle-surface" id="statCircleSurface">
+              <div class="empty-state">
+                <div>
+                  <h3>Stat circle will appear here.</h3>
+                  <p class="empty-copy">Load an export, paste at least two stats, and select at least one success award.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab-panel" data-tab-panel="ageGraphing" hidden>
+      <div class="panel fade-up delay-1">
+        <div class="panel-inner">
+          <div class="results-head">
+            <div>
+              <h2>Age Graphing</h2>
+              <p class="results-meta" id="ageGraphMeta">
+                Plot the lowest OVR needed at each age to reach selected later-award success rates.
+              </p>
+            </div>
+            <span class="pill"><strong id="ageGraphPointCountValue">0</strong> points</span>
+          </div>
+
+          <div class="age-graph-layout">
+            <div class="age-graph-controls">
+              <div class="age-graph-control-grid">
+                <div>
+                  <label for="ageGraphPositionFilter">Position</label>
+                  <select id="ageGraphPositionFilter"></select>
+                </div>
+                <div>
+                  <label for="ageGraphThreshold1">Success % 1</label>
+                  <input id="ageGraphThreshold1" type="number" step="1" min="0" max="100" value="25">
+                </div>
+                <div>
+                  <label for="ageGraphThreshold2">Success % 2</label>
+                  <input id="ageGraphThreshold2" type="number" step="1" min="0" max="100" value="50">
+                </div>
+                <div>
+                  <label for="ageGraphThreshold3">Success % 3</label>
+                  <input id="ageGraphThreshold3" type="number" step="1" min="0" max="100" value="75">
+                </div>
+              </div>
+
+              <div class="stat-circle-awards">
+                <div class="comparison-filter-meta">
+                  <span class="filter-mode-label">Success Awards</span>
+                  <div class="comparison-filter-mode">
+                    <button class="mode-button is-active" id="ageGraphAwardsModeAnd" type="button">AND</button>
+                    <button class="mode-button" id="ageGraphAwardsModeOr" type="button">OR</button>
+                  </div>
+                </div>
+                <div class="comparison-filter-row">
+                  <button class="comparison-filter-pill" id="ageGraphAwardAllStar" type="button"><span>All-Star</span><span class="filter-state-badge" data-filter-state-label>Ignore</span></button>
+                  <button class="comparison-filter-pill" id="ageGraphAwardAllLeague" type="button"><span>All-League</span><span class="filter-state-badge" data-filter-state-label>Ignore</span></button>
+                  <button class="comparison-filter-pill" id="ageGraphAwardAllDefensive" type="button"><span>All-Defensive</span><span class="filter-state-badge" data-filter-state-label>Ignore</span></button>
+                  <button class="comparison-filter-pill" id="ageGraphAwardMvp" type="button"><span>MVP</span><span class="filter-state-badge" data-filter-state-label>Ignore</span></button>
+                </div>
+              </div>
+            </div>
+
+            <div class="age-graph-surface" id="ageGraphSurface">
+              <div class="empty-state">
+                <div>
+                  <h3>Age graph will appear here.</h3>
+                  <p class="empty-copy">Load an export and select at least one success award.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="tab-panel" data-tab-panel="settings" hidden>
       <div class="panel fade-up delay-1">
         <div class="panel-inner">
@@ -2308,6 +2632,68 @@
       allDefensive: "All-Defensive",
       mvp: "MVP",
     };
+    const STAT_CIRCLE_FIELDS = ["ovr", "hgt", "stre", "spd", "jmp", "endu", "ins", "dnk", "ft", "fg", "tp", "oiq", "diq", "drb", "pss", "reb"];
+    const STAT_CIRCLE_LABELS = {
+      ovr: "OVR",
+      hgt: "Height",
+      stre: "Strength",
+      spd: "Speed",
+      jmp: "Jumping",
+      endu: "Endurance",
+      ins: "Inside",
+      dnk: "Dunks/Layups",
+      ft: "Free Throws",
+      fg: "Mid Range",
+      tp: "Three Pointers",
+      oiq: "Offensive IQ",
+      diq: "Defensive IQ",
+      drb: "Dribbling",
+      pss: "Passing",
+      reb: "Rebounding",
+    };
+    const STAT_CIRCLE_LABEL_TO_FIELD = {
+      overall: "ovr",
+      ovr: "ovr",
+      height: "hgt",
+      hgt: "hgt",
+      strength: "stre",
+      stre: "stre",
+      speed: "spd",
+      spd: "spd",
+      jumping: "jmp",
+      jump: "jmp",
+      jmp: "jmp",
+      endurance: "endu",
+      endu: "endu",
+      inside: "ins",
+      ins: "ins",
+      dunkslayups: "dnk",
+      dunklayup: "dnk",
+      dunks: "dnk",
+      layups: "dnk",
+      dnk: "dnk",
+      freethrows: "ft",
+      ft: "ft",
+      midrange: "fg",
+      mid: "fg",
+      fg: "fg",
+      threepointers: "tp",
+      threepoint: "tp",
+      threes: "tp",
+      tp: "tp",
+      offensiveiq: "oiq",
+      offenseiq: "oiq",
+      oiq: "oiq",
+      defensiveiq: "diq",
+      defenseiq: "diq",
+      diq: "diq",
+      dribbling: "drb",
+      drb: "drb",
+      passing: "pss",
+      pss: "pss",
+      rebounding: "reb",
+      reb: "reb",
+    };
 
     function createAwardFilterState() {
       return {
@@ -2409,6 +2795,20 @@
       nextAverageSecondNumericFilterId: 1002,
       averageSecondCareerFilters: [],
       nextAverageSecondCareerFilterId: 3001,
+      statCircleSnapshotMode: "prospect",
+      statCircleAge: "",
+      statCircleOvrMode: "range",
+      statCircleOvrExact: "",
+      statCircleOvrMin: "",
+      statCircleOvrMax: "",
+      statCirclePositionFilter: "all",
+      statCircleStatRange: "2",
+      statCircleRangeDirection: "both",
+      statCircleAwards: createAwardFilterState(),
+      statCirclePasteText: "",
+      ageGraphPositionFilter: "all",
+      ageGraphAwards: createAwardFilterState(),
+      ageGraphThresholds: ["25", "50", "75"],
       indexedCount: 0,
       hasLoadedFile: false,
       loading: false,
@@ -2511,6 +2911,42 @@
       averageSecondAddCareerFilterButton: document.getElementById("averageSecondAddCareerFilterButton"),
       averageSecondCareerFilters: document.getElementById("averageSecondCareerFilters"),
       averageSurface: document.getElementById("averageSurface"),
+      statCircleMeta: document.getElementById("statCircleMeta"),
+      statCircleMatchCountValue: document.getElementById("statCircleMatchCountValue"),
+      statCircleControlGrid: document.getElementById("statCircleControlGrid"),
+      statCircleSnapshotMode: document.getElementById("statCircleSnapshotMode"),
+      statCircleAge: document.getElementById("statCircleAge"),
+      statCircleOvrMode: document.getElementById("statCircleOvrMode"),
+      statCircleOvrExact: document.getElementById("statCircleOvrExact"),
+      statCircleOvrMin: document.getElementById("statCircleOvrMin"),
+      statCircleOvrMax: document.getElementById("statCircleOvrMax"),
+      statCirclePositionFilter: document.getElementById("statCirclePositionFilter"),
+      statCircleStatRange: document.getElementById("statCircleStatRange"),
+      statCircleRangeDirection: document.getElementById("statCircleRangeDirection"),
+      statCircleAwardsModeAnd: document.getElementById("statCircleAwardsModeAnd"),
+      statCircleAwardsModeOr: document.getElementById("statCircleAwardsModeOr"),
+      statCircleAwardAllStar: document.getElementById("statCircleAwardAllStar"),
+      statCircleAwardAllLeague: document.getElementById("statCircleAwardAllLeague"),
+      statCircleAwardAllDefensive: document.getElementById("statCircleAwardAllDefensive"),
+      statCircleAwardMvp: document.getElementById("statCircleAwardMvp"),
+      statCirclePasteInput: document.getElementById("statCirclePasteInput"),
+      statCircleParseNote: document.getElementById("statCircleParseNote"),
+      statCircleSurface: document.getElementById("statCircleSurface"),
+      ageGraphMeta: document.getElementById("ageGraphMeta"),
+      ageGraphPointCountValue: document.getElementById("ageGraphPointCountValue"),
+      ageGraphPositionFilter: document.getElementById("ageGraphPositionFilter"),
+      ageGraphThresholdInputs: [
+        document.getElementById("ageGraphThreshold1"),
+        document.getElementById("ageGraphThreshold2"),
+        document.getElementById("ageGraphThreshold3"),
+      ],
+      ageGraphAwardsModeAnd: document.getElementById("ageGraphAwardsModeAnd"),
+      ageGraphAwardsModeOr: document.getElementById("ageGraphAwardsModeOr"),
+      ageGraphAwardAllStar: document.getElementById("ageGraphAwardAllStar"),
+      ageGraphAwardAllLeague: document.getElementById("ageGraphAwardAllLeague"),
+      ageGraphAwardAllDefensive: document.getElementById("ageGraphAwardAllDefensive"),
+      ageGraphAwardMvp: document.getElementById("ageGraphAwardMvp"),
+      ageGraphSurface: document.getElementById("ageGraphSurface"),
       tabButtons: [...document.querySelectorAll("[data-tab-target]")],
       tabPanels: [...document.querySelectorAll("[data-tab-panel]")],
       comparisonControls: [0, 1].map((index) => ({
@@ -2809,6 +3245,94 @@
         render();
       }
     });
+    elements.statCircleSnapshotMode.addEventListener("change", () => {
+      state.statCircleSnapshotMode = elements.statCircleSnapshotMode.value;
+      render();
+    });
+    elements.statCircleAge.addEventListener("input", () => {
+      state.statCircleAge = elements.statCircleAge.value;
+      render();
+    });
+    elements.statCircleOvrMode.addEventListener("change", () => {
+      state.statCircleOvrMode = elements.statCircleOvrMode.value;
+      render();
+    });
+    elements.statCircleOvrExact.addEventListener("input", () => {
+      state.statCircleOvrExact = elements.statCircleOvrExact.value;
+      render();
+    });
+    elements.statCircleOvrMin.addEventListener("input", () => {
+      state.statCircleOvrMin = elements.statCircleOvrMin.value;
+      render();
+    });
+    elements.statCircleOvrMax.addEventListener("input", () => {
+      state.statCircleOvrMax = elements.statCircleOvrMax.value;
+      render();
+    });
+    elements.statCirclePositionFilter.addEventListener("change", () => {
+      state.statCirclePositionFilter = elements.statCirclePositionFilter.value;
+      render();
+    });
+    elements.statCircleStatRange.addEventListener("input", () => {
+      state.statCircleStatRange = elements.statCircleStatRange.value;
+      render();
+    });
+    elements.statCircleRangeDirection.addEventListener("change", () => {
+      state.statCircleRangeDirection = elements.statCircleRangeDirection.value;
+      render();
+    });
+    elements.statCircleAwardsModeAnd.addEventListener("click", () => {
+      state.statCircleAwards.matchMode = "and";
+      render();
+    });
+    elements.statCircleAwardsModeOr.addEventListener("click", () => {
+      state.statCircleAwards.matchMode = "or";
+      render();
+    });
+    for (const [key, element] of Object.entries({
+      allStar: elements.statCircleAwardAllStar,
+      allLeague: elements.statCircleAwardAllLeague,
+      allDefensive: elements.statCircleAwardAllDefensive,
+      mvp: elements.statCircleAwardMvp,
+    })) {
+      element.addEventListener("click", () => {
+        state.statCircleAwards[key] = state.statCircleAwards[key] === "include" ? "ignore" : "include";
+        render();
+      });
+    }
+    elements.statCirclePasteInput.addEventListener("input", () => {
+      state.statCirclePasteText = elements.statCirclePasteInput.value;
+      render();
+    });
+    elements.ageGraphPositionFilter.addEventListener("change", () => {
+      state.ageGraphPositionFilter = elements.ageGraphPositionFilter.value;
+      render();
+    });
+    elements.ageGraphThresholdInputs.forEach((input, index) => {
+      input.addEventListener("input", () => {
+        state.ageGraphThresholds[index] = input.value;
+        render();
+      });
+    });
+    elements.ageGraphAwardsModeAnd.addEventListener("click", () => {
+      state.ageGraphAwards.matchMode = "and";
+      render();
+    });
+    elements.ageGraphAwardsModeOr.addEventListener("click", () => {
+      state.ageGraphAwards.matchMode = "or";
+      render();
+    });
+    for (const [key, element] of Object.entries({
+      allStar: elements.ageGraphAwardAllStar,
+      allLeague: elements.ageGraphAwardAllLeague,
+      allDefensive: elements.ageGraphAwardAllDefensive,
+      mvp: elements.ageGraphAwardMvp,
+    })) {
+      element.addEventListener("click", () => {
+        state.ageGraphAwards[key] = state.ageGraphAwards[key] === "include" ? "ignore" : "include";
+        render();
+      });
+    }
     window.addEventListener("keydown", (event) => {
       if (event.key === "Escape") {
         if (state.graphModalOpen) {
@@ -3136,6 +3660,8 @@
       renderTrendPanel();
       renderCustomComparisons();
       renderAveragePlayerTab();
+      renderStatCircleTab();
+      renderAgeGraphingTab();
       renderSettingsTab();
       renderTrendFilterModal();
       renderGraphModal();
@@ -3470,6 +3996,922 @@
         `;
         bindInteractiveGraph(controls.surface);
       });
+    }
+
+    function renderStatCircleTab() {
+      syncStatCircleControls();
+      const parsed = parseStatCirclePaste(state.statCirclePasteText);
+      const circleStats = buildStatCircleStats(parsed.stats);
+      const selectedAwards = getStatCircleSelectedAwardKeys();
+      const baseRows = buildStatCircleBaseRows();
+
+      elements.statCircleMatchCountValue.textContent = formatNumber(baseRows.length);
+      elements.statCircleMeta.textContent = state.rows.length
+        ? `${formatNumber(baseRows.length)} base players match the snapshot, age, OVR, and position filters.`
+        : "Load an export, paste player ratings, and select success awards to draw the circle.";
+      elements.statCircleParseNote.textContent = buildStatCircleParseNote(parsed);
+
+      if (!state.rows.length) {
+        elements.statCircleSurface.innerHTML = `
+          <div class="empty-state">
+            <div>
+              <h3>No export loaded.</h3>
+              <p class="empty-copy">Import a BBGM league file before building a Stat Circle.</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      if (state.statCircleSnapshotMode === "player" && state.statCircleAge === "") {
+        elements.statCircleSurface.innerHTML = `
+          <div class="empty-state">
+            <div>
+              <h3>Choose a player age.</h3>
+              <p class="empty-copy">Player mode needs an exact post-draft age so each player contributes one later-career snapshot.</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      if (circleStats.length < 2) {
+        elements.statCircleSurface.innerHTML = `
+          <div class="empty-state">
+            <div>
+              <h3>Paste at least two ratings.</h3>
+              <p class="empty-copy">Recognized labels include Overall/OVR, Speed, Three Pointers, Offensive IQ, and the other BBGM rating names.</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      if (!selectedAwards.length) {
+        elements.statCircleSurface.innerHTML = `
+          <div class="empty-state">
+            <div>
+              <h3>Select a success award.</h3>
+              <p class="empty-copy">Pick at least one later-career award so the line colors have a success threshold.</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      if (!baseRows.length) {
+        elements.statCircleSurface.innerHTML = `
+          <div class="empty-state">
+            <div>
+              <h3>No players match the base filters.</h3>
+              <p class="empty-copy">Relax the age, OVR, or position filter before comparing pasted stat thresholds.</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      const pairs = buildStatCirclePairs(circleStats, baseRows, selectedAwards);
+      const usablePairs = pairs.filter((pair) => pair.denominator > 0);
+      const averageSuccess = usablePairs.length
+        ? usablePairs.reduce((sum, pair) => sum + pair.percent, 0) / usablePairs.length
+        : 0;
+      elements.statCircleSurface.innerHTML = `
+        <div class="average-summary-grid">
+          <div class="status-cell">
+            <span class="status-label">Parsed stats</span>
+            <span class="status-value">${formatNumber(circleStats.length)}</span>
+          </div>
+          <div class="status-cell">
+            <span class="status-label">Base cohort</span>
+            <span class="status-value">${formatNumber(baseRows.length)}</span>
+          </div>
+          <div class="status-cell">
+            <span class="status-label">Avg pair success</span>
+            <span class="status-value">${formatPercentValue(averageSuccess)}</span>
+          </div>
+        </div>
+        <div class="stat-circle-legend">
+          <span><i style="background:#0f8f5f"></i>50%+ success</span>
+          <span><i style="background:#e0b83f"></i>25% success</span>
+          <span><i style="background:#c83f32"></i>0% success</span>
+          <span><i style="background:#a8a29a"></i>No matching players</span>
+          <span>Thicker lines = more matching players</span>
+          <span>${escapeHtml(formatStatCircleRangeSummary())}</span>
+        </div>
+        <div class="stat-circle-graph-wrap">
+          ${createStatCircleGraphMarkup(circleStats, pairs)}
+        </div>
+        ${createStatCircleComboTableMarkup(pairs)}
+      `;
+    }
+
+    function renderAgeGraphingTab() {
+      syncAgeGraphingControls();
+      const selectedAwards = getAgeGraphSelectedAwardKeys();
+      const thresholds = getAgeGraphThresholds();
+      const snapshotRows = buildAgeGraphSnapshotRows();
+      const series = buildAgeGraphSeries(snapshotRows, thresholds, selectedAwards);
+      const points = series.flatMap((entry) => entry.points);
+
+      elements.ageGraphPointCountValue.textContent = formatNumber(points.length);
+      elements.ageGraphMeta.textContent = state.rows.length
+        ? `${formatNumber(snapshotRows.length)} age snapshots match the selected position.`
+        : "Load an export and select success awards to draw age-based OVR thresholds.";
+
+      if (!state.rows.length) {
+        elements.ageGraphSurface.innerHTML = `
+          <div class="empty-state">
+            <div>
+              <h3>No export loaded.</h3>
+              <p class="empty-copy">Import a BBGM league file before building an age graph.</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      if (!selectedAwards.length) {
+        elements.ageGraphSurface.innerHTML = `
+          <div class="empty-state">
+            <div>
+              <h3>Select a success award.</h3>
+              <p class="empty-copy">Pick at least one later-career award so each age can calculate the OVR needed to reach your success percentage.</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      if (!thresholds.length) {
+        elements.ageGraphSurface.innerHTML = `
+          <div class="empty-state">
+            <div>
+              <h3>Add a valid success percentage.</h3>
+              <p class="empty-copy">Enter at least one percentage between 0 and 100.</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      if (!snapshotRows.length) {
+        elements.ageGraphSurface.innerHTML = `
+          <div class="empty-state">
+            <div>
+              <h3>No snapshots match this position.</h3>
+              <p class="empty-copy">Choose a broader position or group to calculate age thresholds.</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      if (!points.length) {
+        elements.ageGraphSurface.innerHTML = `
+          <div class="empty-state">
+            <div>
+              <h3>No OVR cutoff reaches the selected percentages.</h3>
+              <p class="empty-copy">Lower a success percentage or choose a broader success award combination.</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      elements.ageGraphSurface.innerHTML = `
+        ${createAgeGraphChartMarkup(series)}
+        ${createAgeGraphTableMarkup(series)}
+      `;
+      bindInteractiveGraph(elements.ageGraphSurface);
+    }
+
+    function syncAgeGraphingControls() {
+      renderSelectOptions(
+        elements.ageGraphPositionFilter,
+        AVERAGE_POSITION_FILTER_OPTIONS.map((option) => option.value),
+        state.ageGraphPositionFilter,
+        getAveragePositionFilterLabel,
+      );
+      elements.ageGraphThresholdInputs.forEach((input, index) => {
+        input.value = state.ageGraphThresholds[index] ?? "";
+      });
+      elements.ageGraphAwardsModeAnd.classList.toggle("is-active", state.ageGraphAwards.matchMode === "and");
+      elements.ageGraphAwardsModeOr.classList.toggle("is-active", state.ageGraphAwards.matchMode === "or");
+      syncStatCircleAwardButton(elements.ageGraphAwardAllStar, state.ageGraphAwards.allStar);
+      syncStatCircleAwardButton(elements.ageGraphAwardAllLeague, state.ageGraphAwards.allLeague);
+      syncStatCircleAwardButton(elements.ageGraphAwardAllDefensive, state.ageGraphAwards.allDefensive);
+      syncStatCircleAwardButton(elements.ageGraphAwardMvp, state.ageGraphAwards.mvp);
+    }
+
+    function getAgeGraphSelectedAwardKeys() {
+      return Object.keys(FILTER_LABELS).filter((key) => state.ageGraphAwards[key] === "include");
+    }
+
+    function getAgeGraphThresholds() {
+      return state.ageGraphThresholds
+        .map((value, index) => {
+          if (String(value).trim() === "") {
+            return null;
+          }
+          const rawPercent = Number(value);
+          return {
+            key: `threshold-${index}`,
+            label: `${formatAxisTick(rawPercent)}%`,
+            percent: rawPercent / 100,
+            rawPercent,
+            color: SERIES_COLORS[index % SERIES_COLORS.length],
+          };
+        })
+        .filter((entry) => entry && Number.isFinite(entry.percent) && entry.percent >= 0 && entry.percent <= 1);
+    }
+
+    function buildAgeGraphSnapshotRows() {
+      const rows = [];
+      for (const row of state.rows) {
+        const bestByAge = new Map();
+        for (const entry of row.ratingHistory || []) {
+          if (
+            typeof entry.age !== "number"
+            || !Number.isFinite(entry.age)
+            || typeof entry.season !== "number"
+            || typeof entry.rating?.ovr !== "number"
+          ) {
+            continue;
+          }
+          const current = bestByAge.get(entry.age);
+          if (!current || isBetterAgeGraphSnapshot(entry, current)) {
+            bestByAge.set(entry.age, entry);
+          }
+        }
+
+        for (const snapshot of bestByAge.values()) {
+          const snapshotRow = {
+            ...row,
+            rating: snapshot.rating,
+            firstAge: snapshot.age,
+            firstYear: snapshot.season,
+          };
+          if (!doesRowMatchAveragePositionFilter(snapshotRow, state.ageGraphPositionFilter)) {
+            continue;
+          }
+          rows.push({
+            row,
+            age: snapshot.age,
+            season: snapshot.season,
+            ovr: snapshot.rating.ovr,
+          });
+        }
+      }
+      return rows;
+    }
+
+    function isBetterAgeGraphSnapshot(candidate, current) {
+      const candidateOvr = typeof candidate.rating?.ovr === "number" ? candidate.rating.ovr : Number.NEGATIVE_INFINITY;
+      const currentOvr = typeof current.rating?.ovr === "number" ? current.rating.ovr : Number.NEGATIVE_INFINITY;
+      if (candidateOvr !== currentOvr) {
+        return candidateOvr > currentOvr;
+      }
+      return candidate.season < current.season;
+    }
+
+    function buildAgeGraphSeries(snapshotRows, thresholds, selectedAwards) {
+      const rowsByAge = new Map();
+      for (const snapshotRow of snapshotRows) {
+        if (!rowsByAge.has(snapshotRow.age)) {
+          rowsByAge.set(snapshotRow.age, []);
+        }
+        rowsByAge.get(snapshotRow.age).push(snapshotRow);
+      }
+      const sortedAges = [...rowsByAge.keys()].sort((left, right) => left - right);
+      return thresholds.map((threshold) => {
+        const points = [];
+        for (const age of sortedAges) {
+          const point = findAgeGraphCutoff(rowsByAge.get(age), threshold, selectedAwards);
+          if (point) {
+            points.push({ age, ...point });
+          }
+        }
+        return {
+          key: threshold.key,
+          label: threshold.label,
+          threshold,
+          color: threshold.color,
+          points,
+        };
+      }).filter((entry) => entry.points.length);
+    }
+
+    function findAgeGraphCutoff(rows, threshold, selectedAwards) {
+      const cutoffs = [...new Set(rows.map((row) => row.ovr))]
+        .filter((value) => typeof value === "number" && Number.isFinite(value))
+        .sort((left, right) => left - right);
+      for (const cutoff of cutoffs) {
+        const eligibleRows = rows.filter((row) => row.ovr >= cutoff);
+        if (!eligibleRows.length) {
+          continue;
+        }
+        const successCount = eligibleRows.filter((row) => doesAgeGraphSnapshotReachAwards(row, selectedAwards)).length;
+        const successRate = successCount / eligibleRows.length;
+        if (successRate >= threshold.percent) {
+          return {
+            ovr: cutoff,
+            playerCount: eligibleRows.length,
+            successCount,
+            successRate,
+          };
+        }
+      }
+      return null;
+    }
+
+    function doesAgeGraphSnapshotReachAwards(snapshotRow, selectedAwards) {
+      if (!selectedAwards.length || typeof snapshotRow.season !== "number") {
+        return false;
+      }
+      const laterAwardKeys = new Set((snapshotRow.row.awardHistory || [])
+        .filter((award) => typeof award.season === "number" && award.season > snapshotRow.season)
+        .map((award) => award.key)
+        .filter(Boolean));
+      return state.ageGraphAwards.matchMode === "or"
+        ? selectedAwards.some((key) => laterAwardKeys.has(key))
+        : selectedAwards.every((key) => laterAwardKeys.has(key));
+    }
+
+    function createAgeGraphChartMarkup(series) {
+      const points = series.flatMap((entry) => entry.points);
+      const width = 920;
+      const height = 520;
+      const margin = { top: 24, right: 28, bottom: 64, left: 72 };
+      const innerWidth = width - margin.left - margin.right;
+      const innerHeight = height - margin.top - margin.bottom;
+      const ageValues = points.map((point) => point.age);
+      const ovrValues = points.map((point) => point.ovr);
+      const xMinRaw = Math.min(...ageValues);
+      const xMaxRaw = Math.max(...ageValues);
+      const yMinRaw = Math.min(...ovrValues);
+      const yMaxRaw = Math.max(...ovrValues);
+      const xPadding = xMinRaw === xMaxRaw ? 1 : Math.max((xMaxRaw - xMinRaw) * 0.06, 0.75);
+      const yPadding = yMinRaw === yMaxRaw ? 1 : Math.max((yMaxRaw - yMinRaw) * 0.08, 1);
+      const xMin = xMinRaw - xPadding;
+      const xMax = xMaxRaw + xPadding;
+      const yMin = Math.max(0, yMinRaw - yPadding);
+      const yMax = yMaxRaw + yPadding;
+      const xTicks = buildTicks(xMinRaw, xMaxRaw, 5);
+      const yTicks = buildTicks(yMinRaw, yMaxRaw, 6);
+      const scaleX = (value) => margin.left + ((value - xMin) / (xMax - xMin || 1)) * innerWidth;
+      const scaleY = (value) => margin.top + ((yMax - value) / (yMax - yMin || 1)) * innerHeight;
+
+      const xGrid = xTicks.map((tick) => {
+        const x = scaleX(tick);
+        return `
+          <line class="graph-grid" x1="${x}" y1="${margin.top}" x2="${x}" y2="${height - margin.bottom}"></line>
+          <text class="graph-text" x="${x}" y="${height - margin.bottom + 24}" text-anchor="middle">${escapeHtml(formatAxisTick(tick))}</text>
+        `;
+      }).join("");
+      const yGrid = yTicks.map((tick) => {
+        const y = scaleY(tick);
+        return `
+          <line class="graph-grid" x1="${margin.left}" y1="${y}" x2="${width - margin.right}" y2="${y}"></line>
+          <text class="graph-text" x="${margin.left - 12}" y="${y + 4}" text-anchor="end">${escapeHtml(formatAxisTick(tick))}</text>
+        `;
+      }).join("");
+      const seriesMarkup = series.map((entry) => {
+        const pathData = entry.points
+          .map((point, index) => `${index === 0 ? "M" : "L"} ${scaleX(point.age)} ${scaleY(point.ovr)}`)
+          .join(" ");
+        const markers = entry.points.map((point) => `
+          <circle class="graph-marker" data-chart-style="line" data-series-key="${escapeHtml(entry.key)}" data-series-color="${entry.color}" data-base-radius="3.2" cx="${scaleX(point.age)}" cy="${scaleY(point.ovr)}" r="3.2">
+            <title>${escapeHtml(`${entry.label} success | Age: ${formatAxisTick(point.age)} | Needed OVR: ${formatAxisTick(point.ovr)} | Success: ${formatPercentValue(point.successRate)} | ${formatNumber(point.successCount)} of ${formatNumber(point.playerCount)} players`)}</title>
+          </circle>
+        `).join("");
+        return `
+          <g class="graph-series" data-series-group="${escapeHtml(entry.key)}">
+            <path class="graph-line" data-series-key="${escapeHtml(entry.key)}" data-series-color="${entry.color}" d="${pathData}"></path>
+            ${markers}
+          </g>
+        `;
+      }).join("");
+      const legendMarkup = series.map((entry) => `
+        <span class="legend-item" data-legend-series="${escapeHtml(entry.key)}" data-series-color="${entry.color}">
+          <span class="legend-swatch" style="background:${entry.color};"></span>
+          ${escapeHtml(entry.label)}
+        </span>
+      `).join("");
+
+      return `
+        <div class="graph-shell" data-graph-shell>
+          <div class="graph-inner">
+            <svg class="graph-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Age graph OVR success threshold chart">
+              ${xGrid}
+              ${yGrid}
+              <line class="graph-axis" x1="${margin.left}" y1="${height - margin.bottom}" x2="${width - margin.right}" y2="${height - margin.bottom}"></line>
+              <line class="graph-axis" x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${height - margin.bottom}"></line>
+              <g id="ageGraphPlotGroup">${seriesMarkup}</g>
+              <text class="graph-text axis-label" x="${width / 2}" y="${height - 16}" text-anchor="middle">Age</text>
+              <text class="graph-text axis-label" x="18" y="${height / 2}" text-anchor="middle" transform="rotate(-90 18 ${height / 2})">Lowest OVR Needed</text>
+            </svg>
+            <div class="graph-legend">${legendMarkup}</div>
+            <div class="graph-summary">
+              <span class="pill"><strong>${formatNumber(points.length)}</strong> plotted points</span>
+              <span class="pill"><strong>${escapeHtml(formatAxisTick(xMinRaw))}</strong> to <strong>${escapeHtml(formatAxisTick(xMaxRaw))}</strong> age</span>
+              <span class="pill">OVR or higher cutoff</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function createAgeGraphTableMarkup(series) {
+      const rows = series.flatMap((entry) => entry.points.map((point) => ({ entry, point })))
+        .sort((left, right) => left.point.age - right.point.age || left.entry.threshold.rawPercent - right.entry.threshold.rawPercent);
+      return `
+        <div class="comparison-data-card">
+          <h3>Age Threshold Summary</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Age</th>
+                  <th>Success % Target</th>
+                  <th>Lowest OVR Needed</th>
+                  <th>Actual Success %</th>
+                  <th>Players at Cutoff</th>
+                  <th>Successful Players</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows.map(({ entry, point }) => `
+                  <tr>
+                    <td>${escapeHtml(formatAxisTick(point.age))}</td>
+                    <td>${escapeHtml(entry.label)}</td>
+                    <td>${escapeHtml(formatAxisTick(point.ovr))}</td>
+                    <td>${escapeHtml(formatPercentValue(point.successRate))}</td>
+                    <td>${formatNumber(point.playerCount)}</td>
+                    <td>${formatNumber(point.successCount)}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function syncStatCircleControls() {
+      elements.statCircleControlGrid.dataset.ovrMode = state.statCircleOvrMode;
+      elements.statCircleSnapshotMode.value = state.statCircleSnapshotMode;
+      elements.statCircleAge.value = state.statCircleAge;
+      elements.statCircleAge.placeholder = state.statCircleSnapshotMode === "player" ? "Required" : "Any prospect age";
+      elements.statCircleOvrMode.value = state.statCircleOvrMode;
+      elements.statCircleOvrExact.value = state.statCircleOvrExact;
+      elements.statCircleOvrMin.value = state.statCircleOvrMin;
+      elements.statCircleOvrMax.value = state.statCircleOvrMax;
+      elements.statCircleStatRange.value = state.statCircleStatRange;
+      elements.statCircleRangeDirection.value = state.statCircleRangeDirection;
+      renderSelectOptions(
+        elements.statCirclePositionFilter,
+        AVERAGE_POSITION_FILTER_OPTIONS.map((option) => option.value),
+        state.statCirclePositionFilter,
+        getAveragePositionFilterLabel,
+      );
+      elements.statCircleAwardsModeAnd.classList.toggle("is-active", state.statCircleAwards.matchMode === "and");
+      elements.statCircleAwardsModeOr.classList.toggle("is-active", state.statCircleAwards.matchMode === "or");
+      syncStatCircleAwardButton(elements.statCircleAwardAllStar, state.statCircleAwards.allStar);
+      syncStatCircleAwardButton(elements.statCircleAwardAllLeague, state.statCircleAwards.allLeague);
+      syncStatCircleAwardButton(elements.statCircleAwardAllDefensive, state.statCircleAwards.allDefensive);
+      syncStatCircleAwardButton(elements.statCircleAwardMvp, state.statCircleAwards.mvp);
+      if (elements.statCirclePasteInput.value !== state.statCirclePasteText) {
+        elements.statCirclePasteInput.value = state.statCirclePasteText;
+      }
+    }
+
+    function syncStatCircleAwardButton(buttonElement, filterState) {
+      buttonElement.dataset.filterState = filterState === "include" ? "include" : "ignore";
+      const badge = buttonElement.querySelector("[data-filter-state-label]");
+      if (badge) {
+        badge.textContent = filterState === "include" ? "Selected" : "Ignore";
+      }
+    }
+
+    function parseStatCirclePaste(text) {
+      const stats = [];
+      const byField = new Map();
+      const unrecognized = [];
+      for (const rawLine of String(text || "").split(/\r?\n/)) {
+        const line = rawLine.trim();
+        if (!line || !/[:\t]/.test(line)) {
+          continue;
+        }
+        const match = /^([^:\t]+)[:\t]+\s*(-?\d+(?:\.\d+)?)/.exec(line);
+        if (!match) {
+          unrecognized.push(line);
+          continue;
+        }
+        const normalizedLabel = normalizeStatCircleLabel(match[1]);
+        const field = STAT_CIRCLE_LABEL_TO_FIELD[normalizedLabel];
+        const value = Number(match[2]);
+        if (!field || !STAT_CIRCLE_FIELDS.includes(field) || !Number.isFinite(value)) {
+          unrecognized.push(line);
+          continue;
+        }
+        const stat = {
+          field,
+          label: STAT_CIRCLE_LABELS[field] || formatKey(field),
+          value,
+        };
+        if (byField.has(field)) {
+          const index = byField.get(field);
+          stats[index] = stat;
+        } else {
+          byField.set(field, stats.length);
+          stats.push(stat);
+        }
+      }
+      return { stats, unrecognized };
+    }
+
+    function normalizeStatCircleLabel(label) {
+      return String(label || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    }
+
+    function buildStatCircleParseNote(parsed) {
+      const parsedText = parsed.stats.length
+        ? `${formatNumber(parsed.stats.length)} stats parsed: ${parsed.stats.map((stat) => stat.label).join(", ")}.`
+        : "No recognized stats parsed yet.";
+      if (!parsed.unrecognized.length) {
+        return parsedText;
+      }
+      return `${parsedText} Ignored ${formatNumber(parsed.unrecognized.length)} unrecognized line${parsed.unrecognized.length === 1 ? "" : "s"}.`;
+    }
+
+    function buildStatCircleStats(parsedStats) {
+      const stats = [...parsedStats];
+      if (!stats.some((stat) => stat.field === "ovr")) {
+        const ovrStat = getStatCircleOvrStat();
+        if (ovrStat) {
+          stats.unshift(ovrStat);
+        }
+      }
+      return stats;
+    }
+
+    function getStatCircleOvrStat() {
+      let value = null;
+      if (state.statCircleOvrMode === "exact" && state.statCircleOvrExact !== "") {
+        value = Number(state.statCircleOvrExact);
+      } else if (state.statCircleOvrMode === "range") {
+        const min = state.statCircleOvrMin === "" ? null : Number(state.statCircleOvrMin);
+        const max = state.statCircleOvrMax === "" ? null : Number(state.statCircleOvrMax);
+        if (Number.isFinite(min) && Number.isFinite(max)) {
+          value = (min + max) / 2;
+        } else if (Number.isFinite(min)) {
+          value = min;
+        } else if (Number.isFinite(max)) {
+          value = max;
+        }
+      }
+      if (!Number.isFinite(value)) {
+        return null;
+      }
+      return {
+        field: "ovr",
+        label: STAT_CIRCLE_LABELS.ovr,
+        value: Math.round(value * 10) / 10,
+      };
+    }
+
+    function getStatCircleSelectedAwardKeys() {
+      return Object.keys(FILTER_LABELS).filter((key) => state.statCircleAwards[key] === "include");
+    }
+
+    function buildStatCircleBaseRows() {
+      return state.rows
+        .map((row) => buildStatCircleSnapshotRow(row))
+        .filter((row) => (
+          row
+          && doesRowMatchAveragePositionFilter(row, state.statCirclePositionFilter)
+          && doesStatCircleRowMatchOvr(row)
+        ));
+    }
+
+    function buildStatCircleSnapshotRow(row) {
+      const selectedAge = state.statCircleAge === "" ? null : Number(state.statCircleAge);
+      if (selectedAge !== null && !Number.isFinite(selectedAge)) {
+        return null;
+      }
+
+      if (state.statCircleSnapshotMode !== "player") {
+        if (!row.rating) {
+          return null;
+        }
+        const snapshot = {
+          rating: row.rating,
+          season: row.firstYear,
+          age: row.firstAge,
+        };
+        if (selectedAge !== null && snapshot.age !== selectedAge) {
+          return null;
+        }
+        return {
+          ...row,
+          rating: snapshot.rating,
+          firstYear: snapshot.season,
+          firstAge: snapshot.age,
+          statCircleSnapshotSeason: snapshot.season,
+          statCircleSnapshotAge: snapshot.age,
+        };
+      }
+
+      if (selectedAge === null || typeof row.firstYear !== "number") {
+        return null;
+      }
+
+      const candidates = (row.ratingHistory || []).filter((entry) => (
+        typeof entry.season === "number"
+        && entry.season > row.firstYear
+        && entry.age === selectedAge
+      ));
+      if (!candidates.length) {
+        return null;
+      }
+
+      const best = candidates.reduce((currentBest, entry) => {
+        const bestOvr = typeof currentBest.rating?.ovr === "number" ? currentBest.rating.ovr : Number.NEGATIVE_INFINITY;
+        const entryOvr = typeof entry.rating?.ovr === "number" ? entry.rating.ovr : Number.NEGATIVE_INFINITY;
+        if (entryOvr !== bestOvr) {
+          return entryOvr > bestOvr ? entry : currentBest;
+        }
+        return entry.season < currentBest.season ? entry : currentBest;
+      }, candidates[0]);
+
+      return {
+        ...row,
+        rating: best.rating,
+        firstYear: best.season,
+        firstAge: best.age,
+        statCircleSnapshotSeason: best.season,
+        statCircleSnapshotAge: best.age,
+      };
+    }
+
+    function doesStatCircleRowMatchOvr(row) {
+      const value = row.rating?.ovr;
+      if (typeof value !== "number" || !Number.isFinite(value)) {
+        return false;
+      }
+
+      if (state.statCircleOvrMode === "exact") {
+        if (state.statCircleOvrExact === "") {
+          return true;
+        }
+        const exact = Number(state.statCircleOvrExact);
+        return Number.isFinite(exact) ? value === exact : true;
+      }
+
+      const min = state.statCircleOvrMin === "" ? Number.NEGATIVE_INFINITY : Number(state.statCircleOvrMin);
+      const max = state.statCircleOvrMax === "" ? Number.POSITIVE_INFINITY : Number(state.statCircleOvrMax);
+      if (!Number.isFinite(min) && min !== Number.NEGATIVE_INFINITY) {
+        return true;
+      }
+      if (!Number.isFinite(max) && max !== Number.POSITIVE_INFINITY) {
+        return true;
+      }
+      return value >= min && value <= max;
+    }
+
+    function buildStatCirclePairs(stats, baseRows, selectedAwards) {
+      const pairs = [];
+      for (let leftIndex = 0; leftIndex < stats.length; leftIndex += 1) {
+        for (let rightIndex = leftIndex + 1; rightIndex < stats.length; rightIndex += 1) {
+          const leftStat = stats[leftIndex];
+          const rightStat = stats[rightIndex];
+          const matchingRows = baseRows.filter((row) => (
+            doesStatCircleValueMatchRange(getStatCircleRatingValue(row, leftStat.field), leftStat.value)
+            && doesStatCircleValueMatchRange(getStatCircleRatingValue(row, rightStat.field), rightStat.value)
+          ));
+          const successCount = matchingRows.filter((row) => doesStatCircleRowReachAwards(row, selectedAwards)).length;
+          const percent = matchingRows.length ? successCount / matchingRows.length : 0;
+          pairs.push({
+            leftIndex,
+            rightIndex,
+            leftStat,
+            rightStat,
+            denominator: matchingRows.length,
+            numerator: successCount,
+            percent,
+          });
+        }
+      }
+      return pairs;
+    }
+
+    function doesStatCircleValueMatchRange(value, target) {
+      if (typeof value !== "number" || !Number.isFinite(value) || typeof target !== "number" || !Number.isFinite(target)) {
+        return false;
+      }
+      const tolerance = getStatCircleTolerance();
+      const min = state.statCircleRangeDirection === "higher" ? target : target - tolerance;
+      const max = state.statCircleRangeDirection === "lower" ? target : target + tolerance;
+      return value >= min && value <= max;
+    }
+
+    function getStatCircleTolerance() {
+      const value = Number(state.statCircleStatRange);
+      return Number.isFinite(value) && value >= 0 ? value : 0;
+    }
+
+    function getStatCircleStatBounds(target) {
+      const tolerance = getStatCircleTolerance();
+      return {
+        min: state.statCircleRangeDirection === "higher" ? target : target - tolerance,
+        max: state.statCircleRangeDirection === "lower" ? target : target + tolerance,
+      };
+    }
+
+    function formatStatCircleStatRange(stat) {
+      const bounds = getStatCircleStatBounds(stat.value);
+      if (bounds.min === bounds.max) {
+        return `${stat.label} = ${formatAxisTick(stat.value)}`;
+      }
+      return `${stat.label} ${formatAxisTick(bounds.min)} to ${formatAxisTick(bounds.max)}`;
+    }
+
+    function formatStatCircleRangeOnly(stat) {
+      const bounds = getStatCircleStatBounds(stat.value);
+      if (bounds.min === bounds.max) {
+        return `= ${formatAxisTick(stat.value)}`;
+      }
+      return `${formatAxisTick(bounds.min)} to ${formatAxisTick(bounds.max)}`;
+    }
+
+    function formatStatCircleRangeSummary() {
+      const tolerance = getStatCircleTolerance();
+      if (tolerance === 0) {
+        return "Stat matching: exact values";
+      }
+      if (state.statCircleRangeDirection === "higher") {
+        return `Stat matching: current to +${formatAxisTick(tolerance)}`;
+      }
+      if (state.statCircleRangeDirection === "lower") {
+        return `Stat matching: -${formatAxisTick(tolerance)} to current`;
+      }
+      return `Stat matching: ±${formatAxisTick(tolerance)}`;
+    }
+
+    function getStatCircleRatingValue(row, field) {
+      const value = row.rating?.[field];
+      return typeof value === "number" && Number.isFinite(value) ? value : Number.NEGATIVE_INFINITY;
+    }
+
+    function doesStatCircleRowReachAwards(row, selectedAwards) {
+      if (!selectedAwards.length || typeof row.statCircleSnapshotSeason !== "number") {
+        return false;
+      }
+      const laterAwardKeys = new Set((row.awardHistory || [])
+        .filter((award) => typeof award.season === "number" && award.season > row.statCircleSnapshotSeason)
+        .map((award) => award.key)
+        .filter(Boolean));
+      return state.statCircleAwards.matchMode === "or"
+        ? selectedAwards.some((key) => laterAwardKeys.has(key))
+        : selectedAwards.every((key) => laterAwardKeys.has(key));
+    }
+
+    function createStatCircleGraphMarkup(stats, pairs) {
+      const width = 920;
+      const height = 860;
+      const centerX = width / 2;
+      const centerY = 420;
+      const radius = 330;
+      const boxWidth = 112;
+      const boxHeight = 52;
+      const nodes = stats.map((stat, index) => {
+        const angle = (-Math.PI / 2) + ((Math.PI * 2 * index) / stats.length);
+        return {
+          ...stat,
+          x: centerX + (Math.cos(angle) * radius),
+          y: centerY + (Math.sin(angle) * radius),
+        };
+      });
+      const maxDenominator = pairs.reduce((max, pair) => Math.max(max, pair.denominator), 0);
+      const lineMarkup = pairs.map((pair) => {
+        const left = nodes[pair.leftIndex];
+        const right = nodes[pair.rightIndex];
+        const color = pair.denominator ? getStatCircleLineColor(pair.percent) : "#a8a29a";
+        const opacity = pair.denominator ? 0.52 : 0.28;
+        const strokeWidth = getStatCircleLineWidth(pair.denominator, maxDenominator);
+        const title = `${formatStatCircleStatRange(left)} + ${formatStatCircleStatRange(right)}: ${formatNumber(pair.denominator)} matching players, ${formatNumber(pair.numerator)} reached ${formatStatCircleAwardSummary()} (${pair.denominator ? formatPercentValue(pair.percent) : "0 matches"})`;
+        return `
+          <line class="stat-circle-line" x1="${left.x.toFixed(2)}" y1="${left.y.toFixed(2)}" x2="${right.x.toFixed(2)}" y2="${right.y.toFixed(2)}" stroke="${color}" stroke-width="${strokeWidth.toFixed(2)}" opacity="${opacity}">
+            <title>${escapeHtml(title)}</title>
+          </line>
+        `;
+      }).join("");
+      const nodeMarkup = nodes.map((node) => `
+        <g class="stat-circle-node">
+          <rect x="${(node.x - (boxWidth / 2)).toFixed(2)}" y="${(node.y - (boxHeight / 2)).toFixed(2)}" width="${boxWidth}" height="${boxHeight}"></rect>
+          <text x="${node.x.toFixed(2)}" y="${(node.y - 7).toFixed(2)}">${escapeHtml(node.label)}</text>
+          <text class="stat-circle-node-value" x="${node.x.toFixed(2)}" y="${(node.y + 12).toFixed(2)}">${escapeHtml(formatStatCircleNodeRange(node))}</text>
+        </g>
+      `).join("");
+      return `
+        <svg class="stat-circle-graph" viewBox="0 0 ${width} ${height}" role="img" aria-label="Stat Circle award success graph">
+          <rect x="0" y="0" width="${width}" height="${height}" fill="rgba(255,255,255,0.01)"></rect>
+          <g>${lineMarkup}</g>
+          <g>${nodeMarkup}</g>
+        </svg>
+      `;
+    }
+
+    function createStatCircleComboTableMarkup(pairs) {
+      const rankedPairs = [...pairs].sort((left, right) => (
+        right.percent - left.percent
+        || right.denominator - left.denominator
+        || left.leftStat.label.localeCompare(right.leftStat.label)
+        || left.rightStat.label.localeCompare(right.rightStat.label)
+      ));
+
+      return `
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Stat 1</th>
+                <th>Range 1</th>
+                <th>Stat 2</th>
+                <th>Range 2</th>
+                <th>Success %</th>
+                <th>Players</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rankedPairs.map((pair, index) => `
+                <tr>
+                  <td>${formatNumber(index + 1)}</td>
+                  <td>${escapeHtml(pair.leftStat.label)}</td>
+                  <td>${escapeHtml(formatStatCircleRangeOnly(pair.leftStat))}</td>
+                  <td>${escapeHtml(pair.rightStat.label)}</td>
+                  <td>${escapeHtml(formatStatCircleRangeOnly(pair.rightStat))}</td>
+                  <td>${pair.denominator ? escapeHtml(formatPercentValue(pair.percent)) : "No matches"}</td>
+                  <td>${formatNumber(pair.denominator)}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function getStatCircleLineWidth(denominator, maxDenominator) {
+      if (!denominator) {
+        return 1;
+      }
+      if (maxDenominator <= 1) {
+        return 0.9;
+      }
+      const minWidth = 0.9;
+      const maxWidth = 7.8;
+      const progress = (denominator - 1) / (maxDenominator - 1);
+      return minWidth + ((maxWidth - minWidth) * Math.max(0, Math.min(1, progress)));
+    }
+
+    function formatStatCircleNodeRange(stat) {
+      const bounds = getStatCircleStatBounds(stat.value);
+      if (bounds.min === bounds.max) {
+        return `= ${formatAxisTick(stat.value)}`;
+      }
+      return `${formatAxisTick(bounds.min)}-${formatAxisTick(bounds.max)}`;
+    }
+
+    function getStatCircleLineColor(percent) {
+      const clamped = Math.max(0, Math.min(0.5, percent));
+      if (clamped >= 0.25) {
+        const progress = (clamped - 0.25) / 0.25;
+        return interpolateRgb([224, 184, 63], [15, 143, 95], progress);
+      }
+      return interpolateRgb([200, 63, 50], [224, 184, 63], clamped / 0.25);
+    }
+
+    function interpolateRgb(start, end, progress) {
+      const safeProgress = Math.max(0, Math.min(1, progress));
+      const channels = start.map((value, index) => Math.round(value + ((end[index] - value) * safeProgress)));
+      return `rgb(${channels[0]}, ${channels[1]}, ${channels[2]})`;
+    }
+
+    function formatPercentValue(value) {
+      if (!Number.isFinite(value)) {
+        return "-";
+      }
+      return `${Math.round(value * 1000) / 10}%`;
+    }
+
+    function formatStatCircleAwardSummary() {
+      const selectedAwards = getStatCircleSelectedAwardKeys().map((key) => FILTER_LABELS[key]);
+      if (!selectedAwards.length) {
+        return "selected awards";
+      }
+      return `${state.statCircleAwards.matchMode === "or" ? "any of" : "all of"} ${selectedAwards.join(", ")}`;
     }
 
     function renderAveragePlayerTab() {
@@ -4108,7 +5550,7 @@
           const lowerWhiskerY = scaleY(point.lowerWhisker);
           const upperWhiskerY = scaleY(point.upperWhisker);
           const fillColor = colorWithAlpha(dataset.color, 0.2);
-          const titleText = `${stat.label} | ${dataset.label} | Mean: ${formatAxisTick(point.mean)} | Min: ${formatAxisTick(point.min)} | Q1: ${formatAxisTick(point.q1)} | Median: ${formatAxisTick(point.median)} | Q3: ${formatAxisTick(point.q3)} | Max: ${formatAxisTick(point.max)} | ${formatNumber(point.count)} players`;
+          const titleText = `${stat.label} | ${dataset.label} | Mean: ${formatAxisTick(point.mean)} | Min: ${formatAxisTick(point.min)} | Low Whisker: ${formatAxisTick(point.lowerWhisker)} | Q1: ${formatAxisTick(point.q1)} | Median: ${formatAxisTick(point.median)} | Q3: ${formatAxisTick(point.q3)} | High Whisker: ${formatAxisTick(point.upperWhisker)} | Max: ${formatAxisTick(point.max)} | ${formatNumber(point.count)} players`;
           const outlierDots = point.outliers.map((value) => `
             <circle class="graph-outlier" cx="${x}" cy="${scaleY(value)}" r="2.4" style="fill:${dataset.color};stroke:${dataset.color};">
               <title>${escapeHtml(`${stat.label} | ${dataset.label} | Outlier: ${formatAxisTick(value)}`)}</title>
@@ -4161,9 +5603,11 @@
                   <th>Stat</th>
                   <th>Group</th>
                   <th>Min</th>
+                  <th>Low Whisker</th>
                   <th>Q1</th>
                   <th>Median</th>
                   <th>Q3</th>
+                  <th>High Whisker</th>
                   <th>Max</th>
                   <th>Low Outliers</th>
                   <th>High Outliers</th>
@@ -4179,9 +5623,11 @@
                     <td>${escapeHtml(stat.label)}</td>
                     <td>Group 1</td>
                     <td>${escapeHtml(stat.primary ? formatAxisTick(stat.primary.min) : "-")}</td>
+                    <td>${escapeHtml(stat.primary ? formatAxisTick(stat.primary.lowerWhisker) : "-")}</td>
                     <td>${escapeHtml(stat.primary ? formatAxisTick(stat.primary.q1) : "-")}</td>
                     <td>${escapeHtml(stat.primary ? formatAxisTick(stat.primary.median) : "-")}</td>
                     <td>${escapeHtml(stat.primary ? formatAxisTick(stat.primary.q3) : "-")}</td>
+                    <td>${escapeHtml(stat.primary ? formatAxisTick(stat.primary.upperWhisker) : "-")}</td>
                     <td>${escapeHtml(stat.primary ? formatAxisTick(stat.primary.max) : "-")}</td>
                     <td class="outlier-cell">${stat.primary ? createOutlierCellMarkup(lowOutliers, "raw") : '<span class="outlier-preview">-</span>'}</td>
                     <td class="outlier-cell">${stat.primary ? createOutlierCellMarkup(highOutliers, "raw") : '<span class="outlier-preview">-</span>'}</td>
@@ -4197,9 +5643,11 @@
                       <td>${escapeHtml(stat.label)}</td>
                       <td>Group 2</td>
                       <td>${escapeHtml(stat.secondary ? formatAxisTick(stat.secondary.min) : "-")}</td>
+                      <td>${escapeHtml(stat.secondary ? formatAxisTick(stat.secondary.lowerWhisker) : "-")}</td>
                       <td>${escapeHtml(stat.secondary ? formatAxisTick(stat.secondary.q1) : "-")}</td>
                       <td>${escapeHtml(stat.secondary ? formatAxisTick(stat.secondary.median) : "-")}</td>
                       <td>${escapeHtml(stat.secondary ? formatAxisTick(stat.secondary.q3) : "-")}</td>
+                      <td>${escapeHtml(stat.secondary ? formatAxisTick(stat.secondary.upperWhisker) : "-")}</td>
                       <td>${escapeHtml(stat.secondary ? formatAxisTick(stat.secondary.max) : "-")}</td>
                       <td class="outlier-cell">${stat.secondary ? createOutlierCellMarkup(lowOutliers, "raw") : '<span class="outlier-preview">-</span>'}</td>
                       <td class="outlier-cell">${stat.secondary ? createOutlierCellMarkup(highOutliers, "raw") : '<span class="outlier-preview">-</span>'}</td>
@@ -5954,6 +7402,13 @@
             allDefensive: awards.some((award) => /All-Defensive/.test(award?.type || "")),
             mvp: awards.some((award) => award?.type === "Most Valuable Player"),
           };
+          const awardHistory = awards
+            .map((award) => {
+              const key = getAwardKey(award?.type);
+              const season = typeof award?.season === "number" ? award.season : null;
+              return key && season !== null ? { season, key, type: award.type } : null;
+            })
+            .filter(Boolean);
 
           return {
             pid,
@@ -5961,6 +7416,7 @@
             firstYear,
             firstAge: firstYear !== null && bornYear !== null ? firstYear - bornYear : null,
             accolades,
+            awardHistory,
             rating,
             ratingHistory,
             searchText: [
@@ -5971,6 +7427,22 @@
               rating?.pot
             ].filter((value) => value !== undefined && value !== null).join(" ").toLowerCase(),
           };
+        }
+
+        function getAwardKey(type) {
+          if (type === "All-Star") {
+            return "allStar";
+          }
+          if (/All-League/.test(type || "")) {
+            return "allLeague";
+          }
+          if (/All-Defensive/.test(type || "")) {
+            return "allDefensive";
+          }
+          if (type === "Most Valuable Player") {
+            return "mvp";
+          }
+          return "";
         }
 
         function buildRatingSnapshot(rating) {
