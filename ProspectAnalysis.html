@@ -995,6 +995,12 @@
       display: none;
     }
 
+    .stat-circle-awards[data-success-type="careerOvr"] .stat-circle-award-options,
+    .stat-circle-awards[data-success-type="careerOvr"] .stat-circle-award-mode,
+    .stat-circle-awards[data-success-type="award"] .stat-circle-success-ovr-target {
+      display: none;
+    }
+
     .stat-circle-awards {
       display: grid;
       gap: 10px;
@@ -1109,8 +1115,42 @@
 
     .age-graph-thresholds {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 10px;
+    }
+
+    .age-graph-threshold-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .age-graph-threshold-row {
+      display: grid;
+      grid-template-columns: minmax(120px, 0.7fr) minmax(150px, 1fr) minmax(130px, 0.8fr) auto;
+      gap: 10px;
+      align-items: end;
+      padding: 14px;
+      border: 1px solid rgba(31, 29, 26, 0.08);
+      border-left-width: 5px;
+      border-radius: 18px;
+    }
+
+    .age-graph-threshold-row[data-threshold-type="award"] .age-graph-ovr-target {
+      display: none;
+    }
+
+    .age-graph-threshold-remove {
+      border: 1px solid rgba(184, 92, 56, 0.2);
+      background: rgba(184, 92, 56, 0.08);
+      color: var(--highlight);
+      border-radius: 999px;
+      width: 76px;
+      padding: 10px 8px;
+      font: inherit;
+      font-size: 0.84rem;
+      font-weight: 700;
+      cursor: pointer;
     }
 
     .age-graph-surface {
@@ -2383,15 +2423,30 @@
                 </div>
               </div>
 
-              <div class="stat-circle-awards">
+              <div class="stat-circle-awards" id="statCircleSuccessControls" data-success-type="award">
                 <div class="comparison-filter-meta">
-                  <span class="filter-mode-label">Success Awards</span>
+                  <span class="filter-mode-label">Success Metric</span>
+                  <div class="comparison-filter-mode">
+                    <select id="statCircleSuccessType">
+                      <option value="award">Awards</option>
+                      <option value="careerOvr">Max career OVR</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="comparison-filter-meta stat-circle-award-mode">
+                  <span class="filter-mode-label">Award Logic</span>
                   <div class="comparison-filter-mode">
                     <button class="mode-button is-active" id="statCircleAwardsModeAnd" type="button">AND</button>
                     <button class="mode-button" id="statCircleAwardsModeOr" type="button">OR</button>
                   </div>
                 </div>
-                <div class="comparison-filter-row">
+                <div class="comparison-filter-meta stat-circle-success-ovr-target">
+                  <span class="filter-mode-label">Career OVR Target</span>
+                  <div class="comparison-filter-mode">
+                    <input id="statCircleSuccessOvr" type="number" step="1" min="0" value="70">
+                  </div>
+                </div>
+                <div class="comparison-filter-row stat-circle-award-options">
                   <button class="comparison-filter-pill" id="statCircleAwardAllStar" type="button"><span>All-Star</span><span class="filter-state-badge" data-filter-state-label>Ignore</span></button>
                   <button class="comparison-filter-pill" id="statCircleAwardAllLeague" type="button"><span>All-League</span><span class="filter-state-badge" data-filter-state-label>Ignore</span></button>
                   <button class="comparison-filter-pill" id="statCircleAwardAllDefensive" type="button"><span>All-Defensive</span><span class="filter-state-badge" data-filter-state-label>Ignore</span></button>
@@ -2439,18 +2494,17 @@
                   <label for="ageGraphPositionFilter">Position</label>
                   <select id="ageGraphPositionFilter"></select>
                 </div>
-                <div>
-                  <label for="ageGraphThreshold1">Success % 1</label>
-                  <input id="ageGraphThreshold1" type="number" step="1" min="0" max="100" value="25">
+              </div>
+
+              <div class="age-graph-thresholds">
+                <div class="age-graph-threshold-head">
+                  <div>
+                    <h3>Threshold Lines</h3>
+                    <p class="support-copy">Each row draws one line. Award rows use the selected awards below; career OVR rows use max career OVR.</p>
+                  </div>
+                  <button class="filter-action-button" id="ageGraphAddThresholdButton" type="button">Add Threshold</button>
                 </div>
-                <div>
-                  <label for="ageGraphThreshold2">Success % 2</label>
-                  <input id="ageGraphThreshold2" type="number" step="1" min="0" max="100" value="50">
-                </div>
-                <div>
-                  <label for="ageGraphThreshold3">Success % 3</label>
-                  <input id="ageGraphThreshold3" type="number" step="1" min="0" max="100" value="75">
-                </div>
+                <div class="age-graph-threshold-list" id="ageGraphThresholdList"></div>
               </div>
 
               <div class="stat-circle-awards">
@@ -2730,6 +2784,15 @@
       };
     }
 
+    function createAgeGraphThreshold(id, percent = "50", type = "award", ovr = "70") {
+      return {
+        id,
+        percent,
+        type,
+        ovr,
+      };
+    }
+
     const state = {
       rows: [],
       filteredRows: [],
@@ -2804,11 +2867,18 @@
       statCirclePositionFilter: "all",
       statCircleStatRange: "2",
       statCircleRangeDirection: "both",
+      statCircleSuccessType: "award",
+      statCircleSuccessOvr: "70",
       statCircleAwards: createAwardFilterState(),
       statCirclePasteText: "",
       ageGraphPositionFilter: "all",
       ageGraphAwards: createAwardFilterState(),
-      ageGraphThresholds: ["25", "50", "75"],
+      ageGraphThresholds: [
+        createAgeGraphThreshold(1, "25", "award", "70"),
+        createAgeGraphThreshold(2, "50", "award", "70"),
+        createAgeGraphThreshold(3, "75", "award", "70"),
+      ],
+      nextAgeGraphThresholdId: 4,
       indexedCount: 0,
       hasLoadedFile: false,
       loading: false,
@@ -2923,6 +2993,9 @@
       statCirclePositionFilter: document.getElementById("statCirclePositionFilter"),
       statCircleStatRange: document.getElementById("statCircleStatRange"),
       statCircleRangeDirection: document.getElementById("statCircleRangeDirection"),
+      statCircleSuccessControls: document.getElementById("statCircleSuccessControls"),
+      statCircleSuccessType: document.getElementById("statCircleSuccessType"),
+      statCircleSuccessOvr: document.getElementById("statCircleSuccessOvr"),
       statCircleAwardsModeAnd: document.getElementById("statCircleAwardsModeAnd"),
       statCircleAwardsModeOr: document.getElementById("statCircleAwardsModeOr"),
       statCircleAwardAllStar: document.getElementById("statCircleAwardAllStar"),
@@ -2935,11 +3008,8 @@
       ageGraphMeta: document.getElementById("ageGraphMeta"),
       ageGraphPointCountValue: document.getElementById("ageGraphPointCountValue"),
       ageGraphPositionFilter: document.getElementById("ageGraphPositionFilter"),
-      ageGraphThresholdInputs: [
-        document.getElementById("ageGraphThreshold1"),
-        document.getElementById("ageGraphThreshold2"),
-        document.getElementById("ageGraphThreshold3"),
-      ],
+      ageGraphAddThresholdButton: document.getElementById("ageGraphAddThresholdButton"),
+      ageGraphThresholdList: document.getElementById("ageGraphThresholdList"),
       ageGraphAwardsModeAnd: document.getElementById("ageGraphAwardsModeAnd"),
       ageGraphAwardsModeOr: document.getElementById("ageGraphAwardsModeOr"),
       ageGraphAwardAllStar: document.getElementById("ageGraphAwardAllStar"),
@@ -3281,6 +3351,14 @@
       state.statCircleRangeDirection = elements.statCircleRangeDirection.value;
       render();
     });
+    elements.statCircleSuccessType.addEventListener("change", () => {
+      state.statCircleSuccessType = elements.statCircleSuccessType.value;
+      render();
+    });
+    elements.statCircleSuccessOvr.addEventListener("input", () => {
+      state.statCircleSuccessOvr = elements.statCircleSuccessOvr.value;
+      render();
+    });
     elements.statCircleAwardsModeAnd.addEventListener("click", () => {
       state.statCircleAwards.matchMode = "and";
       render();
@@ -3308,11 +3386,36 @@
       state.ageGraphPositionFilter = elements.ageGraphPositionFilter.value;
       render();
     });
-    elements.ageGraphThresholdInputs.forEach((input, index) => {
-      input.addEventListener("input", () => {
-        state.ageGraphThresholds[index] = input.value;
+    elements.ageGraphAddThresholdButton.addEventListener("click", () => {
+      state.ageGraphThresholds.push(createAgeGraphThreshold(state.nextAgeGraphThresholdId));
+      state.nextAgeGraphThresholdId += 1;
+      render();
+    });
+    elements.ageGraphThresholdList.addEventListener("change", (event) => {
+      if (event.target.matches("[data-age-graph-threshold-type]") && applyAgeGraphThresholdChange(event)) {
         render();
-      });
+      }
+    });
+    elements.ageGraphThresholdList.addEventListener("keydown", (event) => {
+      if (
+        event.key === "Enter"
+        && event.target.matches("[data-age-graph-threshold-percent], [data-age-graph-threshold-ovr]")
+        && applyAgeGraphThresholdChange(event)
+      ) {
+        event.preventDefault();
+        event.target.blur();
+        render();
+      }
+    });
+    elements.ageGraphThresholdList.addEventListener("click", (event) => {
+      const removeButton = event.target.closest("[data-age-graph-threshold-remove]");
+      if (!removeButton) {
+        return;
+      }
+      const row = removeButton.closest("[data-age-graph-threshold-id]");
+      const thresholdId = Number(row?.dataset.ageGraphThresholdId);
+      state.ageGraphThresholds = state.ageGraphThresholds.filter((threshold) => threshold.id !== thresholdId);
+      render();
     });
     elements.ageGraphAwardsModeAnd.addEventListener("click", () => {
       state.ageGraphAwards.matchMode = "and";
@@ -4003,7 +4106,10 @@
       const parsed = parseStatCirclePaste(state.statCirclePasteText);
       const circleStats = buildStatCircleStats(parsed.stats);
       const selectedAwards = getStatCircleSelectedAwardKeys();
+      const successConfig = getStatCircleSuccessConfig(selectedAwards);
       const baseRows = buildStatCircleBaseRows();
+      const baseSuccessCount = baseRows.filter((row) => doesStatCircleRowReachSuccess(row, successConfig)).length;
+      const baseSuccessRate = baseRows.length ? baseSuccessCount / baseRows.length : 0;
 
       elements.statCircleMatchCountValue.textContent = formatNumber(baseRows.length);
       elements.statCircleMeta.textContent = state.rows.length
@@ -4047,12 +4153,12 @@
         return;
       }
 
-      if (!selectedAwards.length) {
+      if (!successConfig.isValid) {
         elements.statCircleSurface.innerHTML = `
           <div class="empty-state">
             <div>
-              <h3>Select a success award.</h3>
-              <p class="empty-copy">Pick at least one later-career award so the line colors have a success threshold.</p>
+              <h3>Set a success metric.</h3>
+              <p class="empty-copy">${escapeHtml(successConfig.invalidMessage)}</p>
             </div>
           </div>
         `;
@@ -4071,7 +4177,7 @@
         return;
       }
 
-      const pairs = buildStatCirclePairs(circleStats, baseRows, selectedAwards);
+      const pairs = buildStatCirclePairs(circleStats, baseRows, successConfig);
       const usablePairs = pairs.filter((pair) => pair.denominator > 0);
       const averageSuccess = usablePairs.length
         ? usablePairs.reduce((sum, pair) => sum + pair.percent, 0) / usablePairs.length
@@ -4085,6 +4191,11 @@
           <div class="status-cell">
             <span class="status-label">Base cohort</span>
             <span class="status-value">${formatNumber(baseRows.length)}</span>
+          </div>
+          <div class="status-cell">
+            <span class="status-label">Base success</span>
+            <span class="status-value">${formatPercentValue(baseSuccessRate)}</span>
+            <span class="status-value-secondary">${formatNumber(baseSuccessCount)} of ${formatNumber(baseRows.length)}</span>
           </div>
           <div class="status-cell">
             <span class="status-label">Avg pair success</span>
@@ -4113,6 +4224,7 @@
       const snapshotRows = buildAgeGraphSnapshotRows();
       const series = buildAgeGraphSeries(snapshotRows, thresholds, selectedAwards);
       const points = series.flatMap((entry) => entry.points);
+      const needsAwards = thresholds.some((threshold) => threshold.type === "award");
 
       elements.ageGraphPointCountValue.textContent = formatNumber(points.length);
       elements.ageGraphMeta.textContent = state.rows.length
@@ -4131,7 +4243,7 @@
         return;
       }
 
-      if (!selectedAwards.length) {
+      if (needsAwards && !selectedAwards.length) {
         elements.ageGraphSurface.innerHTML = `
           <div class="empty-state">
             <div>
@@ -4193,9 +4305,7 @@
         state.ageGraphPositionFilter,
         getAveragePositionFilterLabel,
       );
-      elements.ageGraphThresholdInputs.forEach((input, index) => {
-        input.value = state.ageGraphThresholds[index] ?? "";
-      });
+      renderAgeGraphThresholdRows();
       elements.ageGraphAwardsModeAnd.classList.toggle("is-active", state.ageGraphAwards.matchMode === "and");
       elements.ageGraphAwardsModeOr.classList.toggle("is-active", state.ageGraphAwards.matchMode === "or");
       syncStatCircleAwardButton(elements.ageGraphAwardAllStar, state.ageGraphAwards.allStar);
@@ -4204,22 +4314,82 @@
       syncStatCircleAwardButton(elements.ageGraphAwardMvp, state.ageGraphAwards.mvp);
     }
 
+    function renderAgeGraphThresholdRows() {
+      elements.ageGraphThresholdList.innerHTML = state.ageGraphThresholds.map((threshold, index) => {
+        const color = SERIES_COLORS[index % SERIES_COLORS.length];
+        return `
+          <div class="age-graph-threshold-row" data-age-graph-threshold-id="${threshold.id}" data-threshold-type="${escapeHtml(threshold.type)}" style="border-left-color:${color};background:${colorWithAlpha(color, 0.08)};">
+            <div>
+              <label>Success %</label>
+              <input type="number" step="1" min="0" max="100" data-age-graph-threshold-percent value="${escapeHtml(threshold.percent)}">
+            </div>
+            <div>
+              <label>Success Type</label>
+              <select data-age-graph-threshold-type>
+                <option value="award"${threshold.type === "award" ? " selected" : ""}>Awards selected below</option>
+                <option value="careerOvr"${threshold.type === "careerOvr" ? " selected" : ""}>Max career OVR</option>
+              </select>
+            </div>
+            <div class="age-graph-ovr-target">
+              <label>Career OVR Target</label>
+              <input type="number" step="1" min="0" data-age-graph-threshold-ovr value="${escapeHtml(threshold.ovr)}">
+            </div>
+            <button class="age-graph-threshold-remove" type="button" data-age-graph-threshold-remove>Remove</button>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function applyAgeGraphThresholdChange(event) {
+      const row = event.target.closest("[data-age-graph-threshold-id]");
+      if (!row) {
+        return false;
+      }
+      const thresholdId = Number(row.dataset.ageGraphThresholdId);
+      const threshold = state.ageGraphThresholds.find((entry) => entry.id === thresholdId);
+      if (!threshold) {
+        return false;
+      }
+      if (event.target.matches("[data-age-graph-threshold-percent]")) {
+        threshold.percent = event.target.value;
+        return true;
+      }
+      if (event.target.matches("[data-age-graph-threshold-type]")) {
+        threshold.type = event.target.value;
+        return true;
+      }
+      if (event.target.matches("[data-age-graph-threshold-ovr]")) {
+        threshold.ovr = event.target.value;
+        return true;
+      }
+      return false;
+    }
+
     function getAgeGraphSelectedAwardKeys() {
       return Object.keys(FILTER_LABELS).filter((key) => state.ageGraphAwards[key] === "include");
     }
 
     function getAgeGraphThresholds() {
       return state.ageGraphThresholds
-        .map((value, index) => {
-          if (String(value).trim() === "") {
+        .map((threshold, index) => {
+          if (String(threshold.percent).trim() === "") {
             return null;
           }
-          const rawPercent = Number(value);
+          const rawPercent = Number(threshold.percent);
+          const type = threshold.type === "careerOvr" ? "careerOvr" : "award";
+          const careerOvr = Number(threshold.ovr);
+          if (type === "careerOvr" && !Number.isFinite(careerOvr)) {
+            return null;
+          }
           return {
-            key: `threshold-${index}`,
-            label: `${formatAxisTick(rawPercent)}%`,
+            key: `threshold-${threshold.id}`,
+            label: type === "careerOvr"
+              ? `${formatAxisTick(rawPercent)}% max OVR ${formatAxisTick(careerOvr)}+`
+              : `${formatAxisTick(rawPercent)}% awards`,
             percent: rawPercent / 100,
             rawPercent,
+            type,
+            careerOvr,
             color: SERIES_COLORS[index % SERIES_COLORS.length],
           };
         })
@@ -4230,6 +4400,10 @@
       const rows = [];
       for (const row of state.rows) {
         const bestByAge = new Map();
+        const careerMaxOvr = (row.ratingHistory || [])
+          .map((entry) => entry.rating?.ovr)
+          .filter((value) => typeof value === "number" && Number.isFinite(value))
+          .reduce((max, value) => Math.max(max, value), Number.NEGATIVE_INFINITY);
         for (const entry of row.ratingHistory || []) {
           if (
             typeof entry.age !== "number"
@@ -4260,6 +4434,7 @@
             age: snapshot.age,
             season: snapshot.season,
             ovr: snapshot.rating.ovr,
+            careerMaxOvr,
           });
         }
       }
@@ -4311,7 +4486,7 @@
         if (!eligibleRows.length) {
           continue;
         }
-        const successCount = eligibleRows.filter((row) => doesAgeGraphSnapshotReachAwards(row, selectedAwards)).length;
+        const successCount = eligibleRows.filter((row) => doesAgeGraphSnapshotReachThreshold(row, threshold, selectedAwards)).length;
         const successRate = successCount / eligibleRows.length;
         if (successRate >= threshold.percent) {
           return {
@@ -4325,7 +4500,10 @@
       return null;
     }
 
-    function doesAgeGraphSnapshotReachAwards(snapshotRow, selectedAwards) {
+    function doesAgeGraphSnapshotReachThreshold(snapshotRow, threshold, selectedAwards) {
+      if (threshold.type === "careerOvr") {
+        return typeof snapshotRow.careerMaxOvr === "number" && snapshotRow.careerMaxOvr >= threshold.careerOvr;
+      }
       if (!selectedAwards.length || typeof snapshotRow.season !== "number") {
         return false;
       }
@@ -4351,14 +4529,12 @@
       const xMaxRaw = Math.max(...ageValues);
       const yMinRaw = Math.min(...ovrValues);
       const yMaxRaw = Math.max(...ovrValues);
-      const xPadding = xMinRaw === xMaxRaw ? 1 : Math.max((xMaxRaw - xMinRaw) * 0.06, 0.75);
-      const yPadding = yMinRaw === yMaxRaw ? 1 : Math.max((yMaxRaw - yMinRaw) * 0.08, 1);
-      const xMin = xMinRaw - xPadding;
-      const xMax = xMaxRaw + xPadding;
-      const yMin = Math.max(0, yMinRaw - yPadding);
-      const yMax = yMaxRaw + yPadding;
-      const xTicks = buildTicks(xMinRaw, xMaxRaw, 5);
-      const yTicks = buildTicks(yMinRaw, yMaxRaw, 6);
+      const xTicks = buildStepTicks(xMinRaw, xMaxRaw, 2);
+      const yTicks = buildStepTicks(Math.max(0, yMinRaw), yMaxRaw, 5);
+      const xMin = xTicks[0];
+      const xMax = xTicks[xTicks.length - 1];
+      const yMin = Math.max(0, yTicks[0]);
+      const yMax = yTicks[yTicks.length - 1];
       const scaleX = (value) => margin.left + ((value - xMin) / (xMax - xMin || 1)) * innerWidth;
       const scaleY = (value) => margin.top + ((yMax - value) / (yMax - yMin || 1)) * innerHeight;
 
@@ -4381,13 +4557,13 @@
           .map((point, index) => `${index === 0 ? "M" : "L"} ${scaleX(point.age)} ${scaleY(point.ovr)}`)
           .join(" ");
         const markers = entry.points.map((point) => `
-          <circle class="graph-marker" data-chart-style="line" data-series-key="${escapeHtml(entry.key)}" data-series-color="${entry.color}" data-base-radius="3.2" cx="${scaleX(point.age)}" cy="${scaleY(point.ovr)}" r="3.2">
+          <circle class="graph-marker" data-chart-style="line" data-series-key="${escapeHtml(entry.key)}" data-series-color="${entry.color}" data-always-color="true" data-base-radius="3.2" cx="${scaleX(point.age)}" cy="${scaleY(point.ovr)}" r="3.2" style="fill:${entry.color};">
             <title>${escapeHtml(`${entry.label} success | Age: ${formatAxisTick(point.age)} | Needed OVR: ${formatAxisTick(point.ovr)} | Success: ${formatPercentValue(point.successRate)} | ${formatNumber(point.successCount)} of ${formatNumber(point.playerCount)} players`)}</title>
           </circle>
         `).join("");
         return `
           <g class="graph-series" data-series-group="${escapeHtml(entry.key)}">
-            <path class="graph-line" data-series-key="${escapeHtml(entry.key)}" data-series-color="${entry.color}" d="${pathData}"></path>
+            <path class="graph-line" data-series-key="${escapeHtml(entry.key)}" data-series-color="${entry.color}" data-always-color="true" d="${pathData}" style="stroke:${entry.color};"></path>
             ${markers}
           </g>
         `;
@@ -4434,6 +4610,7 @@
                 <tr>
                   <th>Age</th>
                   <th>Success % Target</th>
+                  <th>Success Type</th>
                   <th>Lowest OVR Needed</th>
                   <th>Actual Success %</th>
                   <th>Players at Cutoff</th>
@@ -4442,9 +4619,10 @@
               </thead>
               <tbody>
                 ${rows.map(({ entry, point }) => `
-                  <tr>
+                  <tr style="border-left: 5px solid ${entry.color}; background: ${colorWithAlpha(entry.color, 0.08)};">
                     <td>${escapeHtml(formatAxisTick(point.age))}</td>
                     <td>${escapeHtml(entry.label)}</td>
+                    <td>${escapeHtml(formatAgeGraphThresholdType(entry.threshold))}</td>
                     <td>${escapeHtml(formatAxisTick(point.ovr))}</td>
                     <td>${escapeHtml(formatPercentValue(point.successRate))}</td>
                     <td>${formatNumber(point.playerCount)}</td>
@@ -4458,6 +4636,13 @@
       `;
     }
 
+    function formatAgeGraphThresholdType(threshold) {
+      if (threshold.type === "careerOvr") {
+        return `Max career OVR ${formatAxisTick(threshold.careerOvr)}+`;
+      }
+      return `Awards (${state.ageGraphAwards.matchMode.toUpperCase()})`;
+    }
+
     function syncStatCircleControls() {
       elements.statCircleControlGrid.dataset.ovrMode = state.statCircleOvrMode;
       elements.statCircleSnapshotMode.value = state.statCircleSnapshotMode;
@@ -4469,6 +4654,9 @@
       elements.statCircleOvrMax.value = state.statCircleOvrMax;
       elements.statCircleStatRange.value = state.statCircleStatRange;
       elements.statCircleRangeDirection.value = state.statCircleRangeDirection;
+      elements.statCircleSuccessControls.dataset.successType = state.statCircleSuccessType;
+      elements.statCircleSuccessType.value = state.statCircleSuccessType;
+      elements.statCircleSuccessOvr.value = state.statCircleSuccessOvr;
       renderSelectOptions(
         elements.statCirclePositionFilter,
         AVERAGE_POSITION_FILTER_OPTIONS.map((option) => option.value),
@@ -4585,6 +4773,24 @@
       return Object.keys(FILTER_LABELS).filter((key) => state.statCircleAwards[key] === "include");
     }
 
+    function getStatCircleSuccessConfig(selectedAwards) {
+      if (state.statCircleSuccessType === "careerOvr") {
+        const careerOvr = Number(state.statCircleSuccessOvr);
+        return {
+          type: "careerOvr",
+          careerOvr,
+          isValid: Number.isFinite(careerOvr),
+          invalidMessage: "Enter a valid max career OVR target.",
+        };
+      }
+      return {
+        type: "award",
+        selectedAwards,
+        isValid: selectedAwards.length > 0,
+        invalidMessage: "Pick at least one later-career award so the line colors have a success threshold.",
+      };
+    }
+
     function buildStatCircleBaseRows() {
       return state.rows
         .map((row) => buildStatCircleSnapshotRow(row))
@@ -4620,6 +4826,7 @@
           firstAge: snapshot.age,
           statCircleSnapshotSeason: snapshot.season,
           statCircleSnapshotAge: snapshot.age,
+          statCircleCareerMaxOvr: getRowCareerMaxOvr(row),
         };
       }
 
@@ -4652,7 +4859,15 @@
         firstAge: best.age,
         statCircleSnapshotSeason: best.season,
         statCircleSnapshotAge: best.age,
+        statCircleCareerMaxOvr: getRowCareerMaxOvr(row),
       };
+    }
+
+    function getRowCareerMaxOvr(row) {
+      return (row.ratingHistory || [])
+        .map((entry) => entry.rating?.ovr)
+        .filter((value) => typeof value === "number" && Number.isFinite(value))
+        .reduce((max, value) => Math.max(max, value), Number.NEGATIVE_INFINITY);
     }
 
     function doesStatCircleRowMatchOvr(row) {
@@ -4680,7 +4895,7 @@
       return value >= min && value <= max;
     }
 
-    function buildStatCirclePairs(stats, baseRows, selectedAwards) {
+    function buildStatCirclePairs(stats, baseRows, successConfig) {
       const pairs = [];
       for (let leftIndex = 0; leftIndex < stats.length; leftIndex += 1) {
         for (let rightIndex = leftIndex + 1; rightIndex < stats.length; rightIndex += 1) {
@@ -4690,7 +4905,7 @@
             doesStatCircleValueMatchRange(getStatCircleRatingValue(row, leftStat.field), leftStat.value)
             && doesStatCircleValueMatchRange(getStatCircleRatingValue(row, rightStat.field), rightStat.value)
           ));
-          const successCount = matchingRows.filter((row) => doesStatCircleRowReachAwards(row, selectedAwards)).length;
+          const successCount = matchingRows.filter((row) => doesStatCircleRowReachSuccess(row, successConfig)).length;
           const percent = matchingRows.length ? successCount / matchingRows.length : 0;
           pairs.push({
             leftIndex,
@@ -4764,8 +4979,11 @@
       return typeof value === "number" && Number.isFinite(value) ? value : Number.NEGATIVE_INFINITY;
     }
 
-    function doesStatCircleRowReachAwards(row, selectedAwards) {
-      if (!selectedAwards.length || typeof row.statCircleSnapshotSeason !== "number") {
+    function doesStatCircleRowReachSuccess(row, successConfig) {
+      if (successConfig.type === "careerOvr") {
+        return typeof row.statCircleCareerMaxOvr === "number" && row.statCircleCareerMaxOvr >= successConfig.careerOvr;
+      }
+      if (!successConfig.selectedAwards.length || typeof row.statCircleSnapshotSeason !== "number") {
         return false;
       }
       const laterAwardKeys = new Set((row.awardHistory || [])
@@ -4773,8 +4991,8 @@
         .map((award) => award.key)
         .filter(Boolean));
       return state.statCircleAwards.matchMode === "or"
-        ? selectedAwards.some((key) => laterAwardKeys.has(key))
-        : selectedAwards.every((key) => laterAwardKeys.has(key));
+        ? successConfig.selectedAwards.some((key) => laterAwardKeys.has(key))
+        : successConfig.selectedAwards.every((key) => laterAwardKeys.has(key));
     }
 
     function createStatCircleGraphMarkup(stats, pairs) {
@@ -4907,6 +5125,9 @@
     }
 
     function formatStatCircleAwardSummary() {
+      if (state.statCircleSuccessType === "careerOvr") {
+        return `max career OVR ${formatAxisTick(Number(state.statCircleSuccessOvr))}+`;
+      }
       const selectedAwards = getStatCircleSelectedAwardKeys().map((key) => FILTER_LABELS[key]);
       if (!selectedAwards.length) {
         return "selected awards";
@@ -6986,10 +7207,10 @@
         } else {
           node.classList.remove("is-active");
           if (node.matches(".graph-line")) {
-            node.style.stroke = "#c8c4bc";
+            node.style.stroke = node.dataset.alwaysColor === "true" ? node.dataset.seriesColor : "#c8c4bc";
           }
           if (node.matches(".graph-marker")) {
-            node.style.fill = "#c8c4bc";
+            node.style.fill = node.dataset.alwaysColor === "true" ? node.dataset.seriesColor : "#c8c4bc";
             node.setAttribute("r", node.dataset.baseRadius || "3.2");
           }
           if (node.matches(".graph-box")) {
@@ -7021,10 +7242,10 @@
       for (const node of seriesNodes) {
         node.classList.remove("is-active");
         if (node.matches(".graph-line")) {
-          node.style.stroke = "#c8c4bc";
+          node.style.stroke = node.dataset.alwaysColor === "true" ? node.dataset.seriesColor : "#c8c4bc";
         }
         if (node.matches(".graph-marker")) {
-          node.style.fill = "#c8c4bc";
+          node.style.fill = node.dataset.alwaysColor === "true" ? node.dataset.seriesColor : "#c8c4bc";
           node.setAttribute("r", node.dataset.baseRadius || "3.2");
         }
         if (node.matches(".graph-box")) {
@@ -7133,6 +7354,22 @@
       const ticks = [];
       for (let index = 0; index < targetCount; index += 1) {
         ticks.push(min + (step * index));
+      }
+      return ticks;
+    }
+
+    function buildStepTicks(min, max, step) {
+      if (!Number.isFinite(min) || !Number.isFinite(max) || !Number.isFinite(step) || step <= 0) {
+        return [];
+      }
+      let start = Math.floor(min / step) * step;
+      let end = Math.ceil(max / step) * step;
+      if (start === end) {
+        end = start + step;
+      }
+      const ticks = [];
+      for (let value = start; value <= end + (step * 0.001); value += step) {
+        ticks.push(Math.round(value * 1000) / 1000);
       }
       return ticks;
     }
