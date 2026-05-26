@@ -1106,6 +1106,13 @@
       border-bottom: 1px solid var(--line);
     }
 
+    .age-graph-controls[data-mode="heat"] .age-graph-thresholds,
+    .age-graph-controls[data-mode="line"] .age-graph-heat-controls,
+    .age-graph-heat-controls[data-success-type="careerOvr"] .age-graph-heat-award-note,
+    .age-graph-heat-controls[data-success-type="award"] .age-graph-heat-ovr-target {
+      display: none;
+    }
+
     .age-graph-control-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -1156,6 +1163,74 @@
     .age-graph-surface {
       display: grid;
       gap: 16px;
+    }
+
+    .age-graph-heat-controls {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid rgba(31, 29, 26, 0.08);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.5);
+    }
+
+    .age-graph-color-scale {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(74px, 1fr));
+      gap: 8px;
+    }
+
+    .age-graph-color-stop {
+      display: grid;
+      gap: 4px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .age-graph-color-stop input {
+      width: 100%;
+      min-height: 34px;
+      padding: 2px;
+    }
+
+    .age-graph-slider-control {
+      display: grid;
+      gap: 8px;
+    }
+
+    .age-graph-slider-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .age-graph-slider-value {
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .age-graph-heat-legend {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .age-graph-heat-gradient {
+      height: 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(31, 29, 26, 0.12);
+    }
+
+    .age-graph-heat-ticks {
+      display: flex;
+      justify-content: space-between;
+      gap: 4px;
     }
 
     .settings-grid {
@@ -2488,7 +2563,12 @@
           </div>
 
           <div class="age-graph-layout">
-            <div class="age-graph-controls">
+            <div class="age-graph-controls" id="ageGraphControls" data-mode="line">
+              <div class="trend-toolbar-group">
+                <button class="mode-button is-active" id="ageGraphModeLineButton" type="button">Lines</button>
+                <button class="mode-button" id="ageGraphModeHeatButton" type="button">Heat Map</button>
+              </div>
+
               <div class="age-graph-control-grid">
                 <div>
                   <label for="ageGraphPositionFilter">Position</label>
@@ -2505,6 +2585,51 @@
                   <button class="filter-action-button" id="ageGraphAddThresholdButton" type="button">Add Threshold</button>
                 </div>
                 <div class="age-graph-threshold-list" id="ageGraphThresholdList"></div>
+              </div>
+
+              <div class="age-graph-heat-controls" id="ageGraphHeatControls" data-success-type="award">
+                <div class="age-graph-control-grid">
+                  <div>
+                    <label for="ageGraphHeatSuccessType">Heat Map Success</label>
+                    <select id="ageGraphHeatSuccessType">
+                      <option value="award">Awards selected below</option>
+                      <option value="careerOvr">Max career OVR</option>
+                    </select>
+                  </div>
+                  <div class="age-graph-heat-ovr-target">
+                    <label for="ageGraphHeatSuccessOvr">Career OVR Target</label>
+                    <input id="ageGraphHeatSuccessOvr" type="number" step="1" min="0" value="70">
+                  </div>
+                  <div class="age-graph-slider-control">
+                    <label class="age-graph-slider-label" for="ageGraphHeatOvrGranularity">
+                      <span>Y Axis Granularity</span>
+                      <span class="age-graph-slider-value" id="ageGraphHeatOvrGranularityValue">5 OVR</span>
+                    </label>
+                    <input id="ageGraphHeatOvrGranularity" type="range" min="1" max="10" step="1" value="5">
+                  </div>
+                  <div>
+                    <label for="ageGraphHeatOvrMin">Min OVR Row</label>
+                    <input id="ageGraphHeatOvrMin" type="number" step="1" min="0" placeholder="Auto">
+                  </div>
+                  <div>
+                    <label for="ageGraphHeatOvrMax">Max OVR Row</label>
+                    <input id="ageGraphHeatOvrMax" type="number" step="1" min="0" placeholder="Auto">
+                  </div>
+                  <div>
+                    <label for="ageGraphHeatAgeMin">Min Age Column</label>
+                    <input id="ageGraphHeatAgeMin" type="number" step="1" min="0" placeholder="All">
+                  </div>
+                  <div>
+                    <label for="ageGraphHeatAgeMax">Max Age Column</label>
+                    <input id="ageGraphHeatAgeMax" type="number" step="1" min="0" placeholder="All">
+                  </div>
+                </div>
+                <p class="support-copy age-graph-heat-award-note">Award heat maps use the selected award logic below.</p>
+                <div>
+                  <h3>Heat Color Scale</h3>
+                  <p class="support-copy">Adjust the success-rate colors. More of the default scale is concentrated from 0% to 50%.</p>
+                </div>
+                <div class="age-graph-color-scale" id="ageGraphHeatColorScale"></div>
               </div>
 
               <div class="stat-circle-awards">
@@ -2672,6 +2797,7 @@
     const POSITION_GROUP_ORDER = ["G", "F", "C"];
     const SERIES_COLORS = ["#0f6b67", "#b85c38", "#2f5d9f", "#8a6f1a", "#9c3f7a", "#4b7f35", "#6e5ca8", "#9a4d21", "#2a7f90", "#5f5a54"];
     const AVERAGE_GROUP_COLORS = { group1: "#2f5d9f", group2: "#0f6b67" };
+    const AGE_GRAPH_HEAT_COLOR_STOPS = [0, 10, 20, 30, 40, 50, 67, 83, 100];
     const RATING_OPTIONS = [...new Set(["ovr", "pot", "hgt", ...TREND_KEY_ORDER])];
     const AXIS_OPTIONS = ["age", ...RATING_OPTIONS];
     const AVERAGE_PLAYER_FIELDS = ["age", ...RATING_OPTIONS];
@@ -2872,6 +2998,7 @@
       statCircleAwards: createAwardFilterState(),
       statCirclePasteText: "",
       ageGraphPositionFilter: "all",
+      ageGraphMode: "line",
       ageGraphAwards: createAwardFilterState(),
       ageGraphThresholds: [
         createAgeGraphThreshold(1, "25", "award", "70"),
@@ -2879,6 +3006,14 @@
         createAgeGraphThreshold(3, "75", "award", "70"),
       ],
       nextAgeGraphThresholdId: 4,
+      ageGraphHeatSuccessType: "award",
+      ageGraphHeatSuccessOvr: "70",
+      ageGraphHeatOvrGranularity: "5",
+      ageGraphHeatOvrMin: "",
+      ageGraphHeatOvrMax: "",
+      ageGraphHeatAgeMin: "",
+      ageGraphHeatAgeMax: "",
+      ageGraphHeatColors: ["#c83f32", "#e08b32", "#e0b83f", "#c6c94a", "#88bf4d", "#2c9b91", "#3d75c2", "#6956c8", "#8a45b8"],
       indexedCount: 0,
       hasLoadedFile: false,
       loading: false,
@@ -3007,9 +3142,22 @@
       statCircleSurface: document.getElementById("statCircleSurface"),
       ageGraphMeta: document.getElementById("ageGraphMeta"),
       ageGraphPointCountValue: document.getElementById("ageGraphPointCountValue"),
+      ageGraphControls: document.getElementById("ageGraphControls"),
+      ageGraphModeLineButton: document.getElementById("ageGraphModeLineButton"),
+      ageGraphModeHeatButton: document.getElementById("ageGraphModeHeatButton"),
       ageGraphPositionFilter: document.getElementById("ageGraphPositionFilter"),
       ageGraphAddThresholdButton: document.getElementById("ageGraphAddThresholdButton"),
       ageGraphThresholdList: document.getElementById("ageGraphThresholdList"),
+      ageGraphHeatControls: document.getElementById("ageGraphHeatControls"),
+      ageGraphHeatSuccessType: document.getElementById("ageGraphHeatSuccessType"),
+      ageGraphHeatSuccessOvr: document.getElementById("ageGraphHeatSuccessOvr"),
+      ageGraphHeatOvrGranularity: document.getElementById("ageGraphHeatOvrGranularity"),
+      ageGraphHeatOvrGranularityValue: document.getElementById("ageGraphHeatOvrGranularityValue"),
+      ageGraphHeatOvrMin: document.getElementById("ageGraphHeatOvrMin"),
+      ageGraphHeatOvrMax: document.getElementById("ageGraphHeatOvrMax"),
+      ageGraphHeatAgeMin: document.getElementById("ageGraphHeatAgeMin"),
+      ageGraphHeatAgeMax: document.getElementById("ageGraphHeatAgeMax"),
+      ageGraphHeatColorScale: document.getElementById("ageGraphHeatColorScale"),
       ageGraphAwardsModeAnd: document.getElementById("ageGraphAwardsModeAnd"),
       ageGraphAwardsModeOr: document.getElementById("ageGraphAwardsModeOr"),
       ageGraphAwardAllStar: document.getElementById("ageGraphAwardAllStar"),
@@ -3386,6 +3534,14 @@
       state.ageGraphPositionFilter = elements.ageGraphPositionFilter.value;
       render();
     });
+    elements.ageGraphModeLineButton.addEventListener("click", () => {
+      state.ageGraphMode = "line";
+      render();
+    });
+    elements.ageGraphModeHeatButton.addEventListener("click", () => {
+      state.ageGraphMode = "heat";
+      render();
+    });
     elements.ageGraphAddThresholdButton.addEventListener("click", () => {
       state.ageGraphThresholds.push(createAgeGraphThreshold(state.nextAgeGraphThresholdId));
       state.nextAgeGraphThresholdId += 1;
@@ -3415,6 +3571,55 @@
       const row = removeButton.closest("[data-age-graph-threshold-id]");
       const thresholdId = Number(row?.dataset.ageGraphThresholdId);
       state.ageGraphThresholds = state.ageGraphThresholds.filter((threshold) => threshold.id !== thresholdId);
+      render();
+    });
+    elements.ageGraphHeatSuccessType.addEventListener("change", () => {
+      state.ageGraphHeatSuccessType = elements.ageGraphHeatSuccessType.value;
+      render();
+    });
+    elements.ageGraphHeatSuccessOvr.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter") {
+        return;
+      }
+      state.ageGraphHeatSuccessOvr = elements.ageGraphHeatSuccessOvr.value;
+      event.preventDefault();
+      event.target.blur();
+      render();
+    });
+    elements.ageGraphHeatOvrGranularity.addEventListener("input", () => {
+      state.ageGraphHeatOvrGranularity = elements.ageGraphHeatOvrGranularity.value;
+      render();
+    });
+    for (const [element, stateKey] of [
+      [elements.ageGraphHeatOvrMin, "ageGraphHeatOvrMin"],
+      [elements.ageGraphHeatOvrMax, "ageGraphHeatOvrMax"],
+      [elements.ageGraphHeatAgeMin, "ageGraphHeatAgeMin"],
+      [elements.ageGraphHeatAgeMax, "ageGraphHeatAgeMax"],
+    ]) {
+      element.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter") {
+          return;
+        }
+        state[stateKey] = element.value;
+        event.preventDefault();
+        event.target.blur();
+        render();
+      });
+      element.addEventListener("change", () => {
+        state[stateKey] = element.value;
+        render();
+      });
+    }
+    elements.ageGraphHeatColorScale.addEventListener("input", (event) => {
+      const colorInput = event.target.closest("[data-age-graph-heat-color]");
+      if (!colorInput) {
+        return;
+      }
+      const index = Number(colorInput.dataset.ageGraphHeatColor);
+      if (!Number.isInteger(index) || index < 0 || index >= state.ageGraphHeatColors.length) {
+        return;
+      }
+      state.ageGraphHeatColors[index] = colorInput.value;
       render();
     });
     elements.ageGraphAwardsModeAnd.addEventListener("click", () => {
@@ -4220,13 +4425,10 @@
     function renderAgeGraphingTab() {
       syncAgeGraphingControls();
       const selectedAwards = getAgeGraphSelectedAwardKeys();
-      const thresholds = getAgeGraphThresholds();
       const snapshotRows = buildAgeGraphSnapshotRows();
-      const series = buildAgeGraphSeries(snapshotRows, thresholds, selectedAwards);
-      const points = series.flatMap((entry) => entry.points);
-      const needsAwards = thresholds.some((threshold) => threshold.type === "award");
+      const isHeatMode = state.ageGraphMode === "heat";
 
-      elements.ageGraphPointCountValue.textContent = formatNumber(points.length);
+      elements.ageGraphPointCountValue.textContent = "0";
       elements.ageGraphMeta.textContent = state.rows.length
         ? `${formatNumber(snapshotRows.length)} age snapshots match the selected position.`
         : "Load an export and select success awards to draw age-based OVR thresholds.";
@@ -4242,6 +4444,30 @@
         `;
         return;
       }
+
+      if (!snapshotRows.length) {
+        elements.ageGraphSurface.innerHTML = `
+          <div class="empty-state">
+            <div>
+              <h3>No snapshots match this position.</h3>
+              <p class="empty-copy">Choose a broader position or group to calculate age thresholds.</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      if (isHeatMode) {
+        renderAgeGraphHeatMapMode(snapshotRows, selectedAwards);
+        return;
+      }
+
+      renderAgeGraphLineMode(snapshotRows, selectedAwards);
+    }
+
+    function renderAgeGraphLineMode(snapshotRows, selectedAwards) {
+      const thresholds = getAgeGraphThresholds();
+      const needsAwards = thresholds.some((threshold) => threshold.type === "award");
 
       if (needsAwards && !selectedAwards.length) {
         elements.ageGraphSurface.innerHTML = `
@@ -4267,17 +4493,9 @@
         return;
       }
 
-      if (!snapshotRows.length) {
-        elements.ageGraphSurface.innerHTML = `
-          <div class="empty-state">
-            <div>
-              <h3>No snapshots match this position.</h3>
-              <p class="empty-copy">Choose a broader position or group to calculate age thresholds.</p>
-            </div>
-          </div>
-        `;
-        return;
-      }
+      const series = buildAgeGraphSeries(snapshotRows, thresholds, selectedAwards);
+      const points = series.flatMap((entry) => entry.points);
+      elements.ageGraphPointCountValue.textContent = formatNumber(points.length);
 
       if (!points.length) {
         elements.ageGraphSurface.innerHTML = `
@@ -4298,7 +4516,55 @@
       bindInteractiveGraph(elements.ageGraphSurface);
     }
 
+    function renderAgeGraphHeatMapMode(snapshotRows, selectedAwards) {
+      const successConfig = getAgeGraphHeatSuccessConfig(selectedAwards);
+      if (!successConfig.isValid) {
+        elements.ageGraphSurface.innerHTML = `
+          <div class="empty-state">
+            <div>
+              <h3>${escapeHtml(successConfig.invalidTitle)}</h3>
+              <p class="empty-copy">${escapeHtml(successConfig.invalidCopy)}</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      const heatData = buildAgeGraphHeatData(snapshotRows, successConfig);
+      const activeCells = heatData.cells.filter((cell) => cell.playerCount > 0);
+      elements.ageGraphPointCountValue.textContent = formatNumber(activeCells.length);
+
+      if (!activeCells.length) {
+        elements.ageGraphSurface.innerHTML = `
+          <div class="empty-state">
+            <div>
+              <h3>No heat-map cells have matching players.</h3>
+              <p class="empty-copy">Choose a broader position or adjust the success metric.</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      elements.ageGraphSurface.innerHTML = `
+        ${createAgeGraphHeatMapMarkup(heatData)}
+        ${createAgeGraphHeatTableMarkup(heatData)}
+      `;
+    }
+
     function syncAgeGraphingControls() {
+      elements.ageGraphControls.dataset.mode = state.ageGraphMode;
+      elements.ageGraphModeLineButton.classList.toggle("is-active", state.ageGraphMode === "line");
+      elements.ageGraphModeHeatButton.classList.toggle("is-active", state.ageGraphMode === "heat");
+      elements.ageGraphHeatControls.dataset.successType = state.ageGraphHeatSuccessType;
+      elements.ageGraphHeatSuccessType.value = state.ageGraphHeatSuccessType;
+      elements.ageGraphHeatSuccessOvr.value = state.ageGraphHeatSuccessOvr;
+      elements.ageGraphHeatOvrGranularity.value = String(getAgeGraphHeatOvrGranularity());
+      elements.ageGraphHeatOvrGranularityValue.textContent = `${getAgeGraphHeatOvrGranularity()} OVR`;
+      elements.ageGraphHeatOvrMin.value = state.ageGraphHeatOvrMin;
+      elements.ageGraphHeatOvrMax.value = state.ageGraphHeatOvrMax;
+      elements.ageGraphHeatAgeMin.value = state.ageGraphHeatAgeMin;
+      elements.ageGraphHeatAgeMax.value = state.ageGraphHeatAgeMax;
       renderSelectOptions(
         elements.ageGraphPositionFilter,
         AVERAGE_POSITION_FILTER_OPTIONS.map((option) => option.value),
@@ -4306,12 +4572,22 @@
         getAveragePositionFilterLabel,
       );
       renderAgeGraphThresholdRows();
+      renderAgeGraphHeatColorControls();
       elements.ageGraphAwardsModeAnd.classList.toggle("is-active", state.ageGraphAwards.matchMode === "and");
       elements.ageGraphAwardsModeOr.classList.toggle("is-active", state.ageGraphAwards.matchMode === "or");
       syncStatCircleAwardButton(elements.ageGraphAwardAllStar, state.ageGraphAwards.allStar);
       syncStatCircleAwardButton(elements.ageGraphAwardAllLeague, state.ageGraphAwards.allLeague);
       syncStatCircleAwardButton(elements.ageGraphAwardAllDefensive, state.ageGraphAwards.allDefensive);
       syncStatCircleAwardButton(elements.ageGraphAwardMvp, state.ageGraphAwards.mvp);
+    }
+
+    function renderAgeGraphHeatColorControls() {
+      elements.ageGraphHeatColorScale.innerHTML = state.ageGraphHeatColors.map((color, index) => `
+        <label class="age-graph-color-stop">
+          <span>${formatAxisTick(getAgeGraphHeatColorStopPercent(index))}%</span>
+          <input type="color" data-age-graph-heat-color="${index}" value="${escapeHtml(color)}">
+        </label>
+      `).join("");
     }
 
     function renderAgeGraphThresholdRows() {
@@ -4516,11 +4792,153 @@
         : selectedAwards.every((key) => laterAwardKeys.has(key));
     }
 
+    function getAgeGraphHeatSuccessConfig(selectedAwards) {
+      if (state.ageGraphHeatSuccessType === "careerOvr") {
+        const careerOvr = Number(state.ageGraphHeatSuccessOvr);
+        return {
+          type: "careerOvr",
+          careerOvr,
+          label: Number.isFinite(careerOvr) ? `Max career OVR ${formatAxisTick(careerOvr)}+` : "Max career OVR",
+          isValid: Number.isFinite(careerOvr),
+          invalidTitle: "Enter a valid career OVR target.",
+          invalidCopy: "Heat-map career OVR success needs one numeric max career OVR value.",
+        };
+      }
+      const selectedLabels = selectedAwards.map((key) => FILTER_LABELS[key]).filter(Boolean);
+      return {
+        type: "award",
+        selectedAwards,
+        label: selectedLabels.length
+          ? `${state.ageGraphAwards.matchMode === "or" ? "Any of" : "All of"} ${selectedLabels.join(", ")}`
+          : "Selected awards",
+        isValid: selectedAwards.length > 0,
+        invalidTitle: "Select a success award.",
+        invalidCopy: "Pick at least one later-career award for award-based heat maps.",
+      };
+    }
+
+    function getAgeGraphHeatOvrGranularity() {
+      const granularity = Number(state.ageGraphHeatOvrGranularity);
+      if (!Number.isFinite(granularity)) {
+        return 5;
+      }
+      return Math.max(1, Math.min(10, Math.round(granularity)));
+    }
+
+    function getAgeGraphHeatOvrBounds(ovrValues, granularity) {
+      const dataMin = Math.max(0, Math.min(...ovrValues));
+      const dataMax = Math.max(...ovrValues);
+      const inputMin = String(state.ageGraphHeatOvrMin).trim() === "" ? Number.NaN : Number(state.ageGraphHeatOvrMin);
+      const inputMax = String(state.ageGraphHeatOvrMax).trim() === "" ? Number.NaN : Number(state.ageGraphHeatOvrMax);
+      let minOvr = Number.isFinite(inputMin) ? inputMin : dataMin;
+      let maxOvr = Number.isFinite(inputMax) ? inputMax : dataMax;
+      if (minOvr > maxOvr) {
+        [minOvr, maxOvr] = [maxOvr, minOvr];
+      }
+      return {
+        min: Math.max(0, Math.floor(minOvr / granularity) * granularity),
+        max: Math.max(0, Math.ceil(maxOvr / granularity) * granularity),
+      };
+    }
+
+    function buildAgeGraphHeatOvrBands(minOvr, maxOvr, granularity) {
+      const bands = [];
+      for (let ovr = minOvr; ovr <= maxOvr + (granularity * 0.001); ovr += granularity) {
+        const roundedMin = Math.round(ovr * 1000) / 1000;
+        const roundedMax = Math.round((ovr + granularity - 1) * 1000) / 1000;
+        bands.push({
+          ovr: roundedMin,
+          min: roundedMin,
+          max: granularity === 1 ? roundedMin : roundedMax,
+          exclusiveMax: roundedMin + granularity,
+          label: granularity === 1 ? formatAxisTick(roundedMin) : `${formatAxisTick(roundedMin)}-${formatAxisTick(roundedMax)}`,
+        });
+      }
+      return bands;
+    }
+
+    function getAgeGraphHeatAgeBounds(ages) {
+      const inputMin = String(state.ageGraphHeatAgeMin).trim() === "" ? Number.NaN : Number(state.ageGraphHeatAgeMin);
+      const inputMax = String(state.ageGraphHeatAgeMax).trim() === "" ? Number.NaN : Number(state.ageGraphHeatAgeMax);
+      let minAge = Number.isFinite(inputMin) ? inputMin : Math.min(...ages);
+      let maxAge = Number.isFinite(inputMax) ? inputMax : Math.max(...ages);
+      if (minAge > maxAge) {
+        [minAge, maxAge] = [maxAge, minAge];
+      }
+      return { min: minAge, max: maxAge };
+    }
+
+    function buildAgeGraphHeatData(snapshotRows, successConfig) {
+      const rowsByAge = new Map();
+      const ovrValues = [];
+      for (const snapshotRow of snapshotRows) {
+        if (!rowsByAge.has(snapshotRow.age)) {
+          rowsByAge.set(snapshotRow.age, []);
+        }
+        rowsByAge.get(snapshotRow.age).push(snapshotRow);
+        if (typeof snapshotRow.ovr === "number" && Number.isFinite(snapshotRow.ovr)) {
+          ovrValues.push(snapshotRow.ovr);
+        }
+      }
+      const allAges = [...rowsByAge.keys()].sort((left, right) => left - right);
+      const ageBounds = getAgeGraphHeatAgeBounds(allAges);
+      const ages = allAges.filter((age) => age >= ageBounds.min && age <= ageBounds.max);
+      if (!ovrValues.length) {
+        return { ages, ovrTicks: [], cells: [], successConfig, ageBounds };
+      }
+      const granularity = getAgeGraphHeatOvrGranularity();
+      const bounds = getAgeGraphHeatOvrBounds(ovrValues, granularity);
+      const ovrBands = buildAgeGraphHeatOvrBands(bounds.min, bounds.max, granularity);
+      const ovrTicks = ovrBands.map((band) => band.ovr);
+      const cells = [];
+
+      for (const age of ages) {
+        const ageRows = rowsByAge.get(age) || [];
+        for (const band of ovrBands) {
+          const eligibleRows = ageRows.filter((row) => row.ovr >= band.min && row.ovr < band.exclusiveMax);
+          const successCount = eligibleRows.filter((row) => doesAgeGraphSnapshotReachHeatSuccess(row, successConfig)).length;
+          cells.push({
+            age,
+            ovr: band.ovr,
+            ovrMin: band.min,
+            ovrMax: band.max,
+            ovrLabel: band.label,
+            playerCount: eligibleRows.length,
+            successCount,
+            successRate: eligibleRows.length ? successCount / eligibleRows.length : null,
+          });
+        }
+      }
+
+      return { ages, ovrTicks, ovrBands, cells, successConfig, granularity, bounds, ageBounds };
+    }
+
+    function doesAgeGraphSnapshotReachHeatSuccess(snapshotRow, successConfig) {
+      if (successConfig.type === "careerOvr") {
+        return typeof snapshotRow.careerMaxOvr === "number" && snapshotRow.careerMaxOvr >= successConfig.careerOvr;
+      }
+      const selectedAwards = successConfig.selectedAwards || [];
+      if (!selectedAwards.length || typeof snapshotRow.season !== "number") {
+        return false;
+      }
+      const laterAwardKeys = new Set((snapshotRow.row.awardHistory || [])
+        .filter((award) => typeof award.season === "number" && award.season > snapshotRow.season)
+        .map((award) => award.key)
+        .filter(Boolean));
+      return state.ageGraphAwards.matchMode === "or"
+        ? selectedAwards.some((key) => laterAwardKeys.has(key))
+        : selectedAwards.every((key) => laterAwardKeys.has(key));
+    }
+
+    function getAgeGraphTitle(mode) {
+      return getAveragePositionFilterLabel(state.ageGraphPositionFilter);
+    }
+
     function createAgeGraphChartMarkup(series) {
       const points = series.flatMap((entry) => entry.points);
       const width = 920;
       const height = 520;
-      const margin = { top: 24, right: 28, bottom: 64, left: 72 };
+      const margin = { top: 54, right: 28, bottom: 64, left: 72 };
       const innerWidth = width - margin.left - margin.right;
       const innerHeight = height - margin.top - margin.bottom;
       const ageValues = points.map((point) => point.age);
@@ -4579,6 +4997,7 @@
         <div class="graph-shell" data-graph-shell>
           <div class="graph-inner">
             <svg class="graph-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Age graph OVR success threshold chart">
+              <text class="graph-text axis-label" x="${width / 2}" y="24" text-anchor="middle">${escapeHtml(getAgeGraphTitle("line"))}</text>
               ${xGrid}
               ${yGrid}
               <line class="graph-axis" x1="${margin.left}" y1="${height - margin.bottom}" x2="${width - margin.right}" y2="${height - margin.bottom}"></line>
@@ -4596,6 +5015,202 @@
           </div>
         </div>
       `;
+    }
+
+    function createAgeGraphHeatMapMarkup(heatData) {
+      const width = 920;
+      const height = 560;
+      const margin = { top: 58, right: 28, bottom: 68, left: 74 };
+      const innerWidth = width - margin.left - margin.right;
+      const innerHeight = height - margin.top - margin.bottom;
+      const ages = heatData.ages;
+      const ovrTicks = heatData.ovrTicks;
+      const reversedOvrTicks = [...ovrTicks].reverse();
+      const ageBand = innerWidth / Math.max(ages.length, 1);
+      const ovrBand = innerHeight / Math.max(ovrTicks.length, 1);
+      const cellPad = getAgeGraphHeatCellPadding(heatData.granularity);
+      const cellByKey = new Map(heatData.cells.map((cell) => [`${cell.age}|${cell.ovr}`, cell]));
+      const xForAge = (age) => margin.left + (ages.indexOf(age) * ageBand) + (ageBand / 2);
+      const yForOvr = (ovr) => margin.top + (reversedOvrTicks.indexOf(ovr) * ovrBand) + (ovrBand / 2);
+      const xTicks = ages.filter((age, index) => {
+        if (index === 0 || index === ages.length - 1) {
+          return true;
+        }
+        return Math.abs((age - ages[0]) % 2) < 0.001;
+      });
+      const xGrid = xTicks.map((tick) => {
+        const x = xForAge(tick);
+        return `
+          <line class="graph-grid" x1="${x}" y1="${margin.top}" x2="${x}" y2="${height - margin.bottom}"></line>
+          <text class="graph-text" x="${x}" y="${height - margin.bottom + 24}" text-anchor="middle">${escapeHtml(formatAxisTick(tick))}</text>
+        `;
+      }).join("");
+      const yLabelTicks = buildStepTicks(ovrTicks[0], ovrTicks[ovrTicks.length - 1], 5);
+      const scaleYLabel = (value) => {
+        const minOvr = ovrTicks[0];
+        const maxOvr = ovrTicks[ovrTicks.length - 1];
+        return margin.top + ((maxOvr - value) / (maxOvr - minOvr || 1)) * innerHeight;
+      };
+      const yGrid = yLabelTicks.map((tick) => {
+        const y = scaleYLabel(tick);
+        return `
+          <line class="graph-grid" x1="${margin.left}" y1="${y}" x2="${width - margin.right}" y2="${y}"></line>
+          <text class="graph-text" x="${margin.left - 12}" y="${y + 4}" text-anchor="end">${escapeHtml(formatAxisTick(tick))}</text>
+        `;
+      }).join("");
+      const cellsMarkup = ages.map((age, ageIndex) => reversedOvrTicks.map((ovr, ovrIndex) => {
+        const cell = cellByKey.get(`${age}|${ovr}`);
+        if (!cell) {
+          return "";
+        }
+        const x = margin.left + (ageIndex * ageBand) + cellPad;
+        const y = margin.top + (ovrIndex * ovrBand) + cellPad;
+        const title = cell.playerCount
+          ? `Age ${formatAxisTick(age)} | OVR ${cell.ovrLabel} | ${formatPercentValue(cell.successRate)} success | ${formatNumber(cell.successCount)} of ${formatNumber(cell.playerCount)} players | ${heatData.successConfig.label}`
+          : `Age ${formatAxisTick(age)} | OVR ${cell.ovrLabel} | 0 matching players`;
+        return `
+          <rect x="${x}" y="${y}" width="${Math.max(ageBand - (cellPad * 2), 0)}" height="${Math.max(ovrBand - (cellPad * 2), 0)}" rx="4" fill="${getAgeGraphHeatColor(cell.successRate)}" opacity="${cell.playerCount ? "0.94" : "0.42"}">
+            <title>${escapeHtml(title)}</title>
+          </rect>
+        `;
+      }).join("")).join("");
+
+      return `
+        <div class="graph-shell" data-graph-shell>
+          <div class="graph-inner">
+            <svg class="graph-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Age graph OVR success heat map">
+              <text class="graph-text axis-label" x="${width / 2}" y="24" text-anchor="middle">${escapeHtml(getAgeGraphTitle("heat"))}</text>
+              ${xGrid}
+              ${yGrid}
+              <g>${cellsMarkup}</g>
+              <line class="graph-axis" x1="${margin.left}" y1="${height - margin.bottom}" x2="${width - margin.right}" y2="${height - margin.bottom}"></line>
+              <line class="graph-axis" x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${height - margin.bottom}"></line>
+              <text class="graph-text axis-label" x="${width / 2}" y="${height - 16}" text-anchor="middle">Age</text>
+              <text class="graph-text axis-label" x="18" y="${height / 2}" text-anchor="middle" transform="rotate(-90 18 ${height / 2})">OVR Band</text>
+            </svg>
+            ${createAgeGraphHeatLegendMarkup(heatData)}
+            <div class="graph-summary">
+              <span class="pill"><strong>${formatNumber(heatData.cells.filter((cell) => cell.playerCount > 0).length)}</strong> filled cells</span>
+              <span class="pill"><strong>${escapeHtml(formatAxisTick(ages[0]))}</strong> to <strong>${escapeHtml(formatAxisTick(ages[ages.length - 1]))}</strong> age</span>
+              <span class="pill"><strong>${formatNumber(heatData.granularity)}</strong> OVR band size</span>
+              <span class="pill">${escapeHtml(heatData.successConfig.label)}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function createAgeGraphHeatLegendMarkup(heatData) {
+      const gradient = createAgeGraphHeatGradientStyle();
+      const ticks = state.ageGraphHeatColors.map((_, index) => `<span>${formatAxisTick(getAgeGraphHeatColorStopPercent(index))}%</span>`).join("");
+      return `
+        <div class="age-graph-heat-legend">
+          <div class="age-graph-heat-gradient" style="background:${gradient};"></div>
+          <div class="age-graph-heat-ticks">${ticks}</div>
+          <div>Cell color = success rate for players at that exact age and within that OVR band. Gray = no matching players.</div>
+        </div>
+      `;
+    }
+
+    function getAgeGraphHeatCellPadding(granularity) {
+      const safeGranularity = Number.isFinite(granularity) ? granularity : 5;
+      return Math.max(0, Math.min(2, (safeGranularity - 1) * 0.22));
+    }
+
+    function createAgeGraphHeatTableMarkup(heatData) {
+      const rows = heatData.cells
+        .filter((cell) => cell.playerCount > 0)
+        .sort((left, right) => left.age - right.age || left.ovr - right.ovr);
+      return `
+        <div class="comparison-data-card">
+          <h3>Heat Map Summary</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Age</th>
+                  <th>OVR Band</th>
+                  <th>Success Metric</th>
+                  <th>Success %</th>
+                  <th>Players in Band</th>
+                  <th>Successful Players</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows.map((cell) => `
+                  <tr style="border-left: 5px solid ${getAgeGraphHeatColor(cell.successRate)}; background: ${colorWithAlpha(getAgeGraphHeatColor(cell.successRate), 0.1)};">
+                    <td>${escapeHtml(formatAxisTick(cell.age))}</td>
+                    <td>${escapeHtml(cell.ovrLabel)}</td>
+                    <td>${escapeHtml(heatData.successConfig.label)}</td>
+                    <td>${escapeHtml(formatPercentValue(cell.successRate))}</td>
+                    <td>${formatNumber(cell.playerCount)}</td>
+                    <td>${formatNumber(cell.successCount)}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function getAgeGraphHeatColor(successRate) {
+      if (!Number.isFinite(successRate)) {
+        return "#a8a29a";
+      }
+      const percent = Math.max(0, Math.min(100, successRate * 100));
+      const stops = getAgeGraphHeatColorStops();
+      let lowerStop = stops[0];
+      let upperStop = stops[stops.length - 1];
+      for (let index = 0; index < stops.length - 1; index += 1) {
+        if (percent >= stops[index].percent && percent <= stops[index + 1].percent) {
+          lowerStop = stops[index];
+          upperStop = stops[index + 1];
+          break;
+        }
+      }
+      if (lowerStop.percent === upperStop.percent) {
+        return lowerStop.color;
+      }
+      const lowerRgb = hexToRgb(lowerStop.color);
+      const upperRgb = hexToRgb(upperStop.color);
+      if (!lowerRgb || !upperRgb) {
+        return lowerStop.color || "#a8a29a";
+      }
+      return interpolateRgb(lowerRgb, upperRgb, (percent - lowerStop.percent) / (upperStop.percent - lowerStop.percent));
+    }
+
+    function createAgeGraphHeatGradientStyle() {
+      return `linear-gradient(90deg, ${getAgeGraphHeatColorStops().map((stop) => `${stop.color} ${stop.percent}%`).join(", ")})`;
+    }
+
+    function getAgeGraphHeatColorStops() {
+      return state.ageGraphHeatColors.map((color, index) => ({
+        color,
+        percent: getAgeGraphHeatColorStopPercent(index),
+      }));
+    }
+
+    function getAgeGraphHeatColorStopPercent(index) {
+      if (index < AGE_GRAPH_HEAT_COLOR_STOPS.length) {
+        return AGE_GRAPH_HEAT_COLOR_STOPS[index];
+      }
+      if (state.ageGraphHeatColors.length <= 1) {
+        return 0;
+      }
+      return (index / (state.ageGraphHeatColors.length - 1)) * 100;
+    }
+
+    function hexToRgb(hex) {
+      const normalized = String(hex || "").replace("#", "").trim();
+      if (!/^[0-9a-f]{6}$/i.test(normalized)) {
+        return null;
+      }
+      return [
+        parseInt(normalized.slice(0, 2), 16),
+        parseInt(normalized.slice(2, 4), 16),
+        parseInt(normalized.slice(4, 6), 16),
+      ];
     }
 
     function createAgeGraphTableMarkup(series) {
@@ -7411,14 +8026,18 @@
 
     function colorWithAlpha(color, alpha) {
       const match = /^#?([0-9a-f]{6})$/i.exec(color || "");
-      if (!match) {
-        return color;
+      if (match) {
+        const hex = match[1];
+        const red = Number.parseInt(hex.slice(0, 2), 16);
+        const green = Number.parseInt(hex.slice(2, 4), 16);
+        const blue = Number.parseInt(hex.slice(4, 6), 16);
+        return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
       }
-      const hex = match[1];
-      const red = Number.parseInt(hex.slice(0, 2), 16);
-      const green = Number.parseInt(hex.slice(2, 4), 16);
-      const blue = Number.parseInt(hex.slice(4, 6), 16);
-      return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+      const rgbMatch = /^rgb\(\s*(\d+),\s*(\d+),\s*(\d+)\s*\)$/i.exec(color || "");
+      if (rgbMatch) {
+        return `rgba(${rgbMatch[1]}, ${rgbMatch[2]}, ${rgbMatch[3]}, ${alpha})`;
+      }
+      return color;
     }
 
     async function toggleGraphFullscreen(graphShell) {
